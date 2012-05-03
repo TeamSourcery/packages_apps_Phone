@@ -70,6 +70,10 @@ import com.android.phone.InCallUiState.InCallScreenMode;
 import com.android.phone.OtaUtils.CdmaOtaInCallScreenUiState;
 import com.android.phone.OtaUtils.CdmaOtaScreenState;
 
+import android.preference.PreferenceManager;
+import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
+
 import java.util.List;
 
 
@@ -159,11 +163,18 @@ public class InCallScreen extends Activity
     private static final int PHONE_INCOMING_RING = 123;
     private static final int PHONE_NEW_RINGING_CONNECTION = 124;
 
+    private static final String BUTTON_LANDSCAPE_KEY = "button_landscape_key";
+    private static final String BUTTON_STATUSBAR_KEY = "button_statusbar_key";
+    private static final String BUTTON_LIGHTSOUT_KEY = "button_lightsout_key";
+    private static final String BUTTON_EXIT_TO_HOMESCREEN_KEY = "button_exit_to_home_screen_key";   
+
     // When InCallScreenMode is UNDEFINED set the default action
     // to ACTION_UNDEFINED so if we are resumed the activity will
     // know its undefined. In particular checkIsOtaCall will return
     // false.
     public static final String ACTION_UNDEFINED = "com.android.phone.InCallScreen.UNDEFINED";
+
+    public static final String ACTION_END_CALL = "com.android.phone.InCallScreen.END_CALL";
 
     /** Status codes returned from syncWithPhoneState(). */
     private enum SyncWithPhoneStateStatus {
@@ -261,7 +272,15 @@ public class InCallScreen extends Activity
         BLUETOOTH,  // Bluetooth headset (if available)
         EARPIECE,   // Handset earpiece (or wired headset, if connected)
     }
-
+ /** 
+     * Extended settings for Landscape, StatusBar & LightsOut
+     *
+     */
+    
+    public boolean Enable_Landscape_In_Call = false;
+    public boolean Enable_StatusBar_In_Call = false;
+    public boolean Enable_LightsOut_In_Call = true;
+    public boolean Exit_To_Home_Screen = false;
 
     private Handler mHandler = new Handler() {
         @Override
@@ -470,6 +489,8 @@ public class InCallScreen extends Activity
             return;
         }
 
+        updateSettings();
+       
         mApp = PhoneApp.getInstance();
         mApp.setInCallScreenInstance(this);
 
@@ -485,13 +506,21 @@ public class InCallScreen extends Activity
         }
         getWindow().addFlags(flags);
 
+        setPhone(mApp.phone);  // Sets mPhone
+          
         // Also put the system bar (if present on this device) into
         // "lights out" mode any time we're the foreground activity.
-        WindowManager.LayoutParams params = getWindow().getAttributes();
-        params.systemUiVisibility = View.SYSTEM_UI_FLAG_LOW_PROFILE;
-        getWindow().setAttributes(params);
-
-        setPhone(mApp.phone);  // Sets mPhone
+        if  (Enable_LightsOut_In_Call) {
+        	// Lightsout is not disabled
+        	WindowManager.LayoutParams params = getWindow().getAttributes();
+        	params.systemUiVisibility = View.SYSTEM_UI_FLAG_LOW_PROFILE;
+        	getWindow().setAttributes(params);
+        } else {
+        	WindowManager.LayoutParams params = getWindow().getAttributes();
+        	params.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE;
+        	getWindow().setAttributes(params);
+        } 
+       
 
         mCM =  mApp.mCM;
         log("- onCreate: phone state = " + mCM.getState());
@@ -564,6 +593,22 @@ public class InCallScreen extends Activity
         if (DBG) log("onResume()...");
         super.onResume();
 
+        updateSettings();
+
+       if ((!Enable_Landscape_In_Call) && (getResources().getConfiguration().orientation==Configuration.ORIENTATION_LANDSCAPE)) {
+        	setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        	// We are in Landscape mode physically, but have not enabled it in settings.
+        }
+        if (Enable_Landscape_In_Call && (getRequestedOrientation()!=ActivityInfo.SCREEN_ORIENTATION_SENSOR)){
+        	setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+        	// We have enabled Landscape in settings, but it looks like we are still locked in Portrait
+        }
+     
+        // This next block is a little overkill, but I need to force a redraw
+        setContentView(R.layout.incall_screen);
+    	initInCallScreen(); 
+    	updateScreen();
+
         mIsForegroundActivity = true;
         mIsForegroundActivityForProximity = true;
 
@@ -577,10 +622,30 @@ public class InCallScreen extends Activity
 
         // Disable the status bar "window shade" the entire time we're on
         // the in-call screen.
-        mApp.notificationMgr.statusBarHelper.enableExpandedView(false);
+        if  (Enable_StatusBar_In_Call) {
+        	//StatusBar is enabled
+        	mApp.notificationMgr.statusBarHelper.enableExpandedView(true);
+        }else { // StatusBar is enabled.
+        	mApp.notificationMgr.statusBarHelper.enableExpandedView(false);
+        }
         // ...and update the in-call notification too, since the status bar
         // icon needs to be hidden while we're the foreground activity:
         mApp.notificationMgr.updateInCallNotification();
+
+        // Also put the system bar (if present on this device) into
+        // "lights out" mode any time we're the foreground activity.
+        // This is set in OnCreated(), but since I've added the ability to turn it off
+        // it needs to be dealt with onResume as well.
+        if  (Enable_LightsOut_In_Call) {
+        	// Lightsout is not disabled
+        	WindowManager.LayoutParams params = getWindow().getAttributes();
+        	params.systemUiVisibility = View.SYSTEM_UI_FLAG_LOW_PROFILE;
+        	getWindow().setAttributes(params);
+        } else {
+        	WindowManager.LayoutParams params = getWindow().getAttributes();
+        	params.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE;
+        	getWindow().setAttributes(params);
+        }
 
         // Listen for broadcast intents that might affect the onscreen UI.
         registerReceiver(mReceiver, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
@@ -1173,6 +1238,11 @@ public class InCallScreen extends Activity
             }
             return;
         }
+         // define an intent to allow hangup from notification
+         if (action.equals(ACTION_END_CALL)){
+           internalHangup();
+  	 	
+        }
 
         // Various intent actions that should no longer come here directly:
         if (action.equals(OtaUtils.ACTION_PERFORM_CDMA_PROVISIONING)) {
@@ -1232,6 +1302,7 @@ public class InCallScreen extends Activity
         // TODO: Don't inflate this until the first time it's needed.
         ViewStub stub = (ViewStub)findViewById(R.id.dtmf_twelve_key_dialer_stub);
         stub.inflate();
+        // }
         mDialerView = (DTMFTwelveKeyDialerView) findViewById(R.id.dtmf_twelve_key_dialer_view);
         if (DBG) log("- Found dialerView: " + mDialerView);
 
@@ -2100,7 +2171,8 @@ public class InCallScreen extends Activity
 
     private View createWildPromptView() {
         LinearLayout result = new LinearLayout(this);
-        result.setOrientation(LinearLayout.VERTICAL);
+        //result.setOrientation(LinearLayout.VERTICAL);
+        // Let the Manfiest determine Layout.
         result.setPadding(5, 5, 5, 5);
 
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
@@ -2506,9 +2578,10 @@ public class InCallScreen extends Activity
                         log("- Show Call Log (or Dialtacts) after disconnect. Current intent: "
                                 + intent);
                     }
-                    try {
-                        startActivity(intent);
-                    } catch (ActivityNotFoundException e) {
+                     if (!Exit_To_Home_Screen)  // If User wants to exit to home screen, skip this part - else go to call log.
+ 	 	       try {
+ 	 	         startActivity(intent);
+ 	 	        } catch (ActivityNotFoundException e) {
                         // Don't crash if there's somehow no "Call log" at
                         // all on this device.
                         // (This should never happen, though, since we already
@@ -4444,6 +4517,15 @@ public class InCallScreen extends Activity
         boolean isKeyboardOpen = (newConfig.keyboardHidden == Configuration.KEYBOARDHIDDEN_NO);
         if (DBG) log("  - isKeyboardOpen = " + isKeyboardOpen);
         boolean isLandscape = (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE);
+        if  (!Enable_Landscape_In_Call) 
+        	// Landscape is disabled - let's try to go back to portrait;
+             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        
+        // if we are here, there must have been a change that justifies redrawing the screen...	
+        setContentView(R.layout.incall_screen);
+        initInCallScreen(); 
+        updateScreen();
+
         if (DBG) log("  - isLandscape = " + isLandscape);
         if (DBG) log("  - uiMode = " + newConfig.uiMode);
         // See bug 2089513.
@@ -4492,4 +4574,20 @@ public class InCallScreen extends Activity
     private void log(String msg) {
         Log.d(LOG_TAG, msg);
     }
-}
+
+     protected void updateSettings() {
+
+       SharedPreferences callsettings = PreferenceManager.getDefaultSharedPreferences(this);
+
+        Enable_Landscape_In_Call = callsettings.getBoolean(BUTTON_LANDSCAPE_KEY,false);
+                
+        Enable_StatusBar_In_Call = callsettings.getBoolean(BUTTON_STATUSBAR_KEY,false);
+                
+        //this one is stored sort of backwards - the setting is to 'Disable Lightouts' - so true here means
+        // NOT Enable_LightsOut_In__Call
+        Enable_LightsOut_In_Call = !(callsettings.getBoolean(BUTTON_LIGHTSOUT_KEY,false)); 
+       
+        Exit_To_Home_Screen = (callsettings.getBoolean(BUTTON_EXIT_TO_HOMESCREEN_KEY,false));
+
+        }    
+      }
