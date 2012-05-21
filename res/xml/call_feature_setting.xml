@@ -161,9 +161,6 @@
         android:summary="@string/exit_to_home_screen_summary"/>  
 
     
-        <intent android:action="android.intent.action.MAIN"
-            android:targetPackage="com.android.contacts"
-            android:targetClass="com.android.contacts.preference.DialpadPreferenceActivity"/> 
-    </PreferenceScreen>
+       
 
 </PreferenceScreen>
