@@ -200,6 +200,7 @@ public class Ringer {
             }
         }
     }
+}
 
     boolean shouldVibrate() {
         AudioManager audioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
