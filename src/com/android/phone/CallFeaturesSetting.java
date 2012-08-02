@@ -1764,8 +1764,7 @@ public class CallFeaturesSetting extends PreferenceActivity
             int nsp = Settings.System.getInt(getContentResolver(), Settings.System.NOISE_SUPPRESSION, 1);
             mButtonNoiseSuppression.setChecked(nsp != 0);
         }
-    }
-
+ 
         lookupRingtoneName();
     }
 
