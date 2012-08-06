@@ -1469,4 +1469,8 @@
     <string name="noise_suppression_summary">Enable noise suppression for calls</string>
    <!-- End Noise suppression -->
 
+   <!-- Dialer UI Settings -->
+    <string name="dialer_ui_settings_title">Dialpad settings</string>
+    <string name="dialer_ui_settings_summary">Settings for the dialpad</string>
+ 
 </resources>
