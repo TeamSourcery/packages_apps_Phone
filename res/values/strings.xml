@@ -1472,5 +1472,8 @@
    <!-- Dialer UI Settings -->
     <string name="dialer_ui_settings_title">Dialpad settings</string>
     <string name="dialer_ui_settings_summary">Settings for the dialpad</string>
+
+   <string name="exit_to_home_screen_title">Exit to Home on End Call</string>
+   <string name="exit_to_home_screen_summary">Exit to Home screen on End Call rather than going to Call Log</string>
  
 </resources>
