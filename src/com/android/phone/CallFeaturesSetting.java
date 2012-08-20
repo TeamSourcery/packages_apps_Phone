@@ -1515,7 +1515,7 @@ public class CallFeaturesSetting extends PreferenceActivity
         mButtonHAC = (CheckBoxPreference) findPreference(BUTTON_HAC_KEY);
         mButtonTTY = (ListPreference) findPreference(BUTTON_TTY_KEY);
         mButtonNoiseSuppression = (CheckBoxPreference) findPreference(BUTTON_NOISE_SUPPRESSION_KEY);
-        mButtonExitToHomeScreen = (CheckBoxPreference) findPreference(BUTTON_EXIT_TO_HOMESCREEN_KEY)
+        mButtonExitToHomeScreen = (CheckBoxPreference) findPreference(BUTTON_EXIT_TO_HOMESCREEN_KEY);
         mVoicemailProviders = (ListPreference) findPreference(BUTTON_VOICEMAIL_PROVIDER_KEY);
         if (mVoicemailProviders != null) {
             mVoicemailProviders.setOnPreferenceChangeListener(this);
