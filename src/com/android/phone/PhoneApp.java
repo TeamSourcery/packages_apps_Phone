@@ -17,6 +17,7 @@
 package com.android.phone;
 
 import android.app.Activity;
+import android.app.AlarmManager;
 import android.app.Application;
 import android.app.KeyguardManager;
 import android.app.PendingIntent;
@@ -37,6 +38,7 @@ import android.net.Uri;
 import android.os.AsyncResult;
 import android.os.Binder;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.IPowerManager;
 import android.os.LocalPowerManager;
@@ -47,6 +49,7 @@ import android.os.ServiceManager;
 import android.os.SystemClock;
 import android.os.SystemProperties;
 import android.os.UpdateLock;
+import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.provider.Settings.System;
 import android.telephony.ServiceState;
@@ -276,6 +279,14 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
     private boolean mTtyEnabled;
     // Current TTY operating mode selected by user
     private int mPreferredTtyMode = Phone.TTY_MODE_OFF;
+
+    // handling of vibration on call begin/each minute/call end
+     private static final String ACTION_VIBRATE_45 = "com.android.phone.PhoneApp.ACTION_VIBRATE_45";
+     private PendingIntent mVibrateIntent;
+     private Vibrator mVibrator;
+     private AlarmManager mAM;
+     private HandlerThread mVibrationThread;
+     private Handler mVibrationHandler;
 
     /**
      * Set the restore mute state flag. Used when we are setting the mute state
@@ -589,6 +600,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
             intentFilter.addAction(TelephonyIntents.ACTION_RADIO_TECHNOLOGY_CHANGED);
             intentFilter.addAction(TelephonyIntents.ACTION_SERVICE_STATE_CHANGED);
             intentFilter.addAction(TelephonyIntents.ACTION_EMERGENCY_CALLBACK_MODE_CHANGED);
+            intentFilter.addAction(ACTION_VIBRATE_45);
             if (mTtyEnabled) {
                 intentFilter.addAction(TtyIntent.TTY_PREFERRED_MODE_CHANGE_ACTION);
             }
@@ -636,6 +648,10 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
 
         // start with the default value to set the mute state.
         mShouldRestoreMuteOnInCallResume = false;
+
+         mVibrator = (Vibrator) this.getSystemService(Context.VIBRATOR_SERVICE);
+         mAM = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
+         mVibrateIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_VIBRATE_45), 0);
 
         // TODO: Register for Cdma Information Records
         // phone.registerCdmaInformationRecord(mHandler, EVENT_UNSOL_CDMA_INFO_RECORD, null);
@@ -1295,7 +1311,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
      * 2) If a wired headset is connected
      * 3) if the speaker is ON
      * 4) If the slider is open(i.e. the hardkeyboard is *not* hidden)
-     *
+     * 5) If it was configured to stay on on Phone > Settings > Keep proximity sensor on
      * @param state current state of the phone (see {@link Phone#State})
      */
     /* package */ void updateProximitySensorMode(Phone.State state) {
@@ -1304,11 +1320,12 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
         if (proximitySensorModeEnabled()) {
             synchronized (mProximityWakeLock) {
                 // turn proximity sensor off and turn screen on immediately if
-                // we are using a headset, the keyboard is open, or the device
-                // is being held in a horizontal position.
-                boolean screenOnImmediately = (isHeadsetPlugged()
+                // we are using a headset and is not configured to keep sensor on
+ 	        // the keyboard is open, or the device
+                boolean keepOn = PhoneUtils.PhoneSettings.keepProximitySensorOn(this);
+ 	        boolean screenOnImmediately = ((!keepOn && isHeadsetPlugged())
                             || PhoneUtils.isSpeakerOn(this)
-                            || ((mBtHandsfree != null) && mBtHandsfree.isAudioOn())
+                            || (!keepOn && (mBtHandsfree != null) && mBtHandsfree.isAudioOn())
                             || mIsHardKeyboardOpen);
 
                 // We do not keep the screen off when the user is outside in-call screen and we are
@@ -1681,6 +1698,10 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
                 if (ringerMode == AudioManager.RINGER_MODE_SILENT) {
                     notifier.silenceRinger();
                 }
+            } else if (action.equals(ACTION_VIBRATE_45)) {
+ 	        if (VDBG) Log.d(LOG_TAG, "mReceiver: ACTION_VIBRATE_45");
+                mAM.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + 60000, mVibrateIntent);
+                vibrate(70, 70, -1);
             }
         }
     }
@@ -2001,6 +2022,64 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
                     + inCallUiState.latestActiveCallOrigin + ") is not valid. "
                     + "Just use CallLog as a default destination.");
             return PhoneApp.createCallLogIntent();
+        }
+    }
+    
+    private final class TriVibRunnable implements Runnable {
+        private int v1, p1, v2;
+
+        TriVibRunnable(int a, int b, int c) {
+            v1 = a; p1 = b; v2 = c;
+        }
+
+        public void run() {
+            if (DBG) Log.d(LOG_TAG, "vibrate " + v1 + ":" + p1 + ":" + v2);
+            if (v1 > 0) mVibrator.vibrate(v1);
+            if (p1 > 0) SystemClock.sleep(p1);
+            if (v2 > 0) mVibrator.vibrate(v2);
+        }
+    }
+
+    public void start45SecondVibration(long callDurationMsec) {
+        if (VDBG) Log.v(LOG_TAG, "vibrate start @" + callDurationMsec);
+
+        stop45SecondVibration();
+
+        long timer;
+        if (callDurationMsec > 45000) {
+            // Schedule the alarm at the next minute + 45 secs
+            timer = 45000 + 60000 - callDurationMsec;
+        } else {
+            // Schedule the alarm at the first 45 second mark
+            timer = 45000 - callDurationMsec;
+        }
+
+        long nextAlarm = SystemClock.elapsedRealtime() + timer;
+        if (VDBG) Log.v(LOG_TAG, "am at: " + nextAlarm);
+        mAM.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, nextAlarm, mVibrateIntent);
+    }
+
+    private void stop45SecondVibration() {
+        if (VDBG) Log.v(LOG_TAG, "vibrate stop @" + SystemClock.elapsedRealtime());
+        mAM.cancel(mVibrateIntent);
+    }
+
+    public void vibrate(int v1, int p1, int v2) {
+        if (mVibrationThread == null) {
+            mVibrationThread = new HandlerThread("Vibrate 45 handler");
+            mVibrationThread.start();
+            mVibrationHandler = new Handler(mVibrationThread.getLooper());
+        }
+        mVibrationHandler.post(new TriVibRunnable(v1, p1, v2));
+    }
+
+    public void stopVibrationThread() {
+        stop45SecondVibration();
+
+        mVibrationHandler = null;
+        if (mVibrationThread != null) {
+            mVibrationThread.quit();
+            mVibrationThread = null;
         }
     }
 }
