@@ -42,6 +42,7 @@ import com.android.internal.telephony.OperatorInfo;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * "Networks" settings UI for the Phone app.
@@ -387,8 +388,10 @@ public class NetworkSetting extends PreferenceActivity
         // update the state of the preferences.
         if (DBG) log("hideProgressPanel");
 
-        if (mIsForeground) {
+        try {
             dismissDialog(DIALOG_NETWORK_LIST_LOAD);
+        } catch (IllegalArgumentException e){
+          if (DBG) log(" DIALOG_NETWORK_LIST_LOAD dismissed already");
         }
 
         getPreferenceScreen().setEnabled(true);
@@ -405,14 +408,21 @@ public class NetworkSetting extends PreferenceActivity
                 // create a preference for each item in the list.
                 // just use the operator name instead of the mildly
                 // confusing mcc/mnc.
+                ArrayList <String> operatorNumerics = new ArrayList<String>();
                 for (OperatorInfo ni : result) {
-                    Preference carrier = new Preference(this, null);
-                    carrier.setTitle(getNetworkTitle(ni));
-                    carrier.setPersistent(false);
-                    mNetworkList.addPreference(carrier);
-                    mNetworkMap.put(carrier, ni);
-
-                    if (DBG) log("  " + ni);
+                    String operatorNumeric = ni.getOperatorNumeric();
+ 	                   if (!operatorNumerics.contains(operatorNumeric)) {
+ 	                       operatorNumerics.add(operatorNumeric);
+ 	                       Preference carrier = new Preference(this, null);
+ 	                       carrier.setTitle(getNetworkTitle(ni));
+ 	                       carrier.setPersistent(false);
+ 	                       mNetworkList.addPreference(carrier);
+ 	                       mNetworkMap.put(carrier, ni);
+ 	
+ 	                       if (DBG) log("  adding:   " + ni);
+                    } else {
+ 	                       if (DBG) log("  skipping: " + ni);
+                    }
                 }
 
             } else {
