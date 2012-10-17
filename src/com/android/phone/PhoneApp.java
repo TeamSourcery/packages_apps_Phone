@@ -60,8 +60,10 @@ import android.view.KeyEvent;
 import com.android.internal.telephony.Call;
 import com.android.internal.telephony.CallManager;
 import com.android.internal.telephony.IccCard;
+import com.android.internal.telephony.IccCardConstants;
 import com.android.internal.telephony.MmiCode;
 import com.android.internal.telephony.Phone;
+import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.PhoneFactory;
 import com.android.internal.telephony.TelephonyCapabilities;
 import com.android.internal.telephony.TelephonyIntents;
@@ -216,7 +218,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
     private boolean mBeginningCall;
 
     // Last phone state seen by updatePhoneState()
-    private Phone.State mLastPhoneState = Phone.State.IDLE;
+    private PhoneConstants.State mLastPhoneState = PhoneConstants.State.IDLE;
 
     private WakeState mWakeState = WakeState.SLEEP;
 
@@ -308,7 +310,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
     Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
-            Phone.State phoneState;
+            PhoneConstants.State phoneState;
             switch (msg.what) {
                 // Starts the SIP service. It's a no-op if SIP API is not supported
                 // on the deivce.
@@ -371,7 +373,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
 
                     phoneState = mCM.getState();
                     // Do not change speaker state if phone is not off hook
-                    if (phoneState == Phone.State.OFFHOOK) {
+                    if (phoneState == PhoneConstants.State.OFFHOOK) {
                         if (mBtHandsfree == null || !mBtHandsfree.isAudioOn()) {
                             if (!isHeadsetPlugged()) {
                                 // if the state is "not connected", restore the speaker state.
@@ -396,7 +398,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
                     // Marks the event where the SIM goes into ready state.
                     // Right now, this is only used for the PUK-unlocking
                     // process.
-                    if (msg.obj.equals(IccCard.INTENT_VALUE_ICC_READY)) {
+                    if (msg.obj.equals(IccCardConstants.INTENT_VALUE_ICC_READY)) {
                         // when the right event is triggered and there
                         // are UI objects in the foreground, we close
                         // them to display the lock panel.
@@ -426,7 +428,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
                             + inDockMode);
 
                     phoneState = mCM.getState();
-                    if (phoneState == Phone.State.OFFHOOK &&
+                    if (phoneState == PhoneConstants.State.OFFHOOK &&
                             !isHeadsetPlugged() &&
                             !(mBtHandsfree != null && mBtHandsfree.isAudioOn())) {
                         PhoneUtils.turnOnSpeaker(getApplicationContext(), inDockMode, true);
@@ -500,7 +502,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
 
             int phoneType = phone.getPhoneType();
 
-            if (phoneType == Phone.PHONE_TYPE_CDMA) {
+            if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
                 // Create an instance of CdmaPhoneCallState and initialize it to IDLE
                 cdmaPhoneCallState = new CdmaPhoneCallState();
                 cdmaPhoneCallState.CdmaPhoneCallStateInit();
@@ -853,7 +855,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
      *   from the in-call UI (i.e. though it is not "foreground" anymore it will become
      *   so after screen being turned on), check
      *   {@link #isShowingCallScreenForProximity()} is true or not.
-     *   {@link #updateProximitySensorMode(com.android.internal.telephony.Phone.State)} is
+     *   {@link #updateProximitySensorMode(com.android.internal.telephony.PhoneConstants.State)} is
      *   doing this.
      *
      * - If you want to know if the activity is not in foreground just because screen
@@ -1144,7 +1146,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
      * Phone UI (e.g. whether or not the InCallScreen is active.)
      */
     /* package */ void updateWakeState() {
-        Phone.State state = mCM.getState();
+        PhoneConstants.State state = mCM.getState();
 
         // True if the in-call UI is the foreground activity.
         // (Note this will be false if the screen is currently off,
@@ -1164,7 +1166,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
         // Note that we need to make a fresh call to this method any
         // time the speaker state changes.  (That happens in
         // PhoneUtils.turnOnSpeaker().)
-        boolean isSpeakerInUse = (state == Phone.State.OFFHOOK) && PhoneUtils.isSpeakerOn(this);
+        boolean isSpeakerInUse = (state == PhoneConstants.State.OFFHOOK) && PhoneUtils.isSpeakerOn(this);
 
         // TODO (bug 1440854): The screen timeout *might* also need to
         // depend on the bluetooth state, but this isn't as clear-cut as
@@ -1203,7 +1205,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
         // or if we're displaying the "Call ended" UI for a connection in
         // the "disconnected" state.
         //
-        boolean isRinging = (state == Phone.State.RINGING);
+        boolean isRinging = (state == PhoneConstants.State.RINGING);
         boolean isDialing = (phone.getForegroundCall().getState() == Call.State.DIALING);
         boolean showingDisconnectedConnection =
                 PhoneUtils.hasDisconnectedConnections(phone) && isShowingCallScreen;
@@ -1314,7 +1316,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
      * 5) If it was configured to stay on on Phone > Settings > Keep proximity sensor on
      * @param state current state of the phone (see {@link Phone#State})
      */
-    /* package */ void updateProximitySensorMode(Phone.State state) {
+    /* package */ void updateProximitySensorMode(PhoneConstants.State state) {
         if (VDBG) Log.d(LOG_TAG, "updateProximitySensorMode: state = " + state);
 
         if (proximitySensorModeEnabled()) {
@@ -1348,7 +1350,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
                 }
                 screenOnImmediately |= dialpadVisible && horizontal;
 
-                if (((state == Phone.State.OFFHOOK) || mBeginningCall) && !screenOnImmediately) {
+                if (((state == PhoneConstants.State.OFFHOOK) || mBeginningCall) && !screenOnImmediately) {
                     // Phone is in use!  Arrange for the screen to turn off
                     // automatically when the sensor detects a close object.
                     if (!mProximityWakeLock.isHeld()) {
@@ -1390,7 +1392,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
      * This method will updates various states inside Phone app (e.g. proximity sensor mode,
      * accelerometer listener state, update-lock state, etc.)
      */
-    /* package */ void updatePhoneState(Phone.State state) {
+    /* package */ void updatePhoneState(PhoneConstants.State state) {
         if (state != mLastPhoneState) {
             mLastPhoneState = state;
             updateProximitySensorMode(state);
@@ -1399,7 +1401,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
             //
             // Watch out: we don't release the lock here when the screen is still in foreground.
             // At that time InCallScreen will release it on onPause().
-            if (state != Phone.State.IDLE) {
+            if (state != PhoneConstants.State.IDLE) {
                 // UpdateLock is a recursive lock, while we may get "acquire" request twice and
                 // "release" request once for a single call (RINGING + OFFHOOK and IDLE).
                 // We need to manually ensure the lock is just acquired once for each (and this
@@ -1420,7 +1422,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
             if (mAccelerometerListener != null) {
                 // use accelerometer to augment proximity sensor when in call
                 mOrientation = AccelerometerListener.ORIENTATION_UNKNOWN;
-                mAccelerometerListener.enable(state == Phone.State.OFFHOOK);
+                mAccelerometerListener.enable(state == PhoneConstants.State.OFFHOOK);
             }
             // clear our beginning call flag
             mBeginningCall = false;
@@ -1430,12 +1432,12 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
             // But we do not want to do this if there is no active call so we do not
             // bypass the keyguard if the call is not answered or declined.
             if (mInCallScreen != null) {
-                mInCallScreen.updateKeyguardPolicy(state == Phone.State.OFFHOOK);
+                mInCallScreen.updateKeyguardPolicy(state == PhoneConstants.State.OFFHOOK);
             }
         }
     }
 
-    /* package */ Phone.State getPhoneState() {
+    /* package */ PhoneConstants.State getPhoneState() {
         return mLastPhoneState;
     }
 
@@ -1467,7 +1469,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
     private void initForNewRadioTechnology() {
         if (DBG) Log.d(LOG_TAG, "initForNewRadioTechnology...");
 
-         if (phone.getPhoneType() == Phone.PHONE_TYPE_CDMA) {
+         if (phone.getPhoneType() == PhoneConstants.PHONE_TYPE_CDMA) {
             // Create an instance of CdmaPhoneCallState and initialize it to IDLE
             cdmaPhoneCallState = new CdmaPhoneCallState();
             cdmaPhoneCallState.CdmaPhoneCallStateInit();
@@ -1632,18 +1634,18 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
                 updateBluetoothIndication(true);  // Also update any visible UI if necessary
             } else if (action.equals(TelephonyIntents.ACTION_ANY_DATA_CONNECTION_STATE_CHANGED)) {
                 if (VDBG) Log.d(LOG_TAG, "mReceiver: ACTION_ANY_DATA_CONNECTION_STATE_CHANGED");
-                if (VDBG) Log.d(LOG_TAG, "- state: " + intent.getStringExtra(Phone.STATE_KEY));
+                if (VDBG) Log.d(LOG_TAG, "- state: " + intent.getStringExtra(PhoneConstants.STATE_KEY));
                 if (VDBG) Log.d(LOG_TAG, "- reason: "
-                                + intent.getStringExtra(Phone.STATE_CHANGE_REASON_KEY));
+                                + intent.getStringExtra(PhoneConstants.STATE_CHANGE_REASON_KEY));
 
                 // The "data disconnected due to roaming" notification is shown
                 // if (a) you have the "data roaming" feature turned off, and
                 // (b) you just lost data connectivity because you're roaming.
                 boolean disconnectedDueToRoaming =
                         !phone.getDataRoamingEnabled()
-                        && "DISCONNECTED".equals(intent.getStringExtra(Phone.STATE_KEY))
+                        && "DISCONNECTED".equals(intent.getStringExtra(PhoneConstants.STATE_KEY))
                         && Phone.REASON_ROAMING_ON.equals(
-                            intent.getStringExtra(Phone.STATE_CHANGE_REASON_KEY));
+                            intent.getStringExtra(PhoneConstants.STATE_CHANGE_REASON_KEY));
                 mHandler.sendEmptyMessage(disconnectedDueToRoaming
                                           ? EVENT_DATA_ROAMING_DISCONNECTED
                                           : EVENT_DATA_ROAMING_OK);
@@ -1660,9 +1662,9 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
                 // NOTE: This is ONLY triggered if an attempt to un-PUK-lock has
                 // been attempted.
                 mHandler.sendMessage(mHandler.obtainMessage(EVENT_SIM_STATE_CHANGED,
-                        intent.getStringExtra(IccCard.INTENT_KEY_ICC_STATE)));
+                        intent.getStringExtra(IccCardConstants.INTENT_KEY_ICC_STATE)));
             } else if (action.equals(TelephonyIntents.ACTION_RADIO_TECHNOLOGY_CHANGED)) {
-                String newPhone = intent.getStringExtra(Phone.PHONE_NAME_KEY);
+                String newPhone = intent.getStringExtra(PhoneConstants.PHONE_NAME_KEY);
                 Log.d(LOG_TAG, "Radio technology switched. Now " + newPhone + " is active.");
                 initForNewRadioTechnology();
             } else if (action.equals(TelephonyIntents.ACTION_SERVICE_STATE_CHANGED)) {
@@ -1734,7 +1736,7 @@ public class PhoneApp extends Application implements AccelerometerListener.Orien
                     abortBroadcast();
                 }
             } else {
-                if (mCM.getState() != Phone.State.IDLE) {
+                if (mCM.getState() != PhoneConstants.State.IDLE) {
                     // If the phone is anything other than completely idle,
                     // then we consume and ignore any media key events,
                     // Otherwise it is too easy to accidentally start

@@ -53,6 +53,7 @@ import android.util.Log;
 import com.android.internal.telephony.Call;
 import com.android.internal.telephony.Connection;
 import com.android.internal.telephony.Phone;
+import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.TelephonyIntents;
 import com.android.internal.telephony.CallManager;
 
@@ -127,7 +128,7 @@ public class BluetoothHandsfree {
     private final BluetoothPhoneState mBluetoothPhoneState;  // for CIND and CIEV updates
     private final BluetoothAtPhonebook mPhonebook;
     private final BluetoothSMSAccess mSMSAccess;
-    private Phone.State mPhoneState = Phone.State.IDLE;
+    private PhoneConstants.State mPhoneState = PhoneConstants.State.IDLE;
     CdmaPhoneCallState.PhoneCallState mCdmaThreeWayCallState =
                                             CdmaPhoneCallState.PhoneCallState.IDLE;
 
@@ -1022,10 +1023,10 @@ public class BluetoothHandsfree {
 
             // This function will get called when the Precise Call State
             // {@link Call.State} changes. Hence, we might get this update
-            // even if the {@link Phone.state} is same as before.
+            // even if the {@link PhoneConstants.state} is same as before.
             // Check for the same.
 
-            Phone.State newState = mCM.getState();
+            PhoneConstants.State newState = mCM.getState();
             if (newState != mPhoneState) {
                 mPhoneState = newState;
                 switch (mPhoneState) {
@@ -1052,7 +1053,7 @@ public class BluetoothHandsfree {
                 // +BLND: OK response
                 // There is a special case handling of the same case
                 // for CDMA below
-                if (mCM.getFgPhone().getPhoneType() == Phone.PHONE_TYPE_GSM) {
+                if (mCM.getFgPhone().getPhoneType() == PhoneConstants.PHONE_TYPE_GSM) {
                     callStarted();
                 }
                 break;
@@ -1134,7 +1135,7 @@ public class BluetoothHandsfree {
                 }
             }
 
-            if (mCM.getDefaultPhone().getPhoneType() == Phone.PHONE_TYPE_CDMA) {
+            if (mCM.getDefaultPhone().getPhoneType() == PhoneConstants.PHONE_TYPE_CDMA) {
                 PhoneApp app = PhoneApp.getInstance();
                 if (app.cdmaPhoneCallState != null) {
                     CdmaPhoneCallState.PhoneCallState currCdmaThreeWayCallState =
@@ -1197,7 +1198,7 @@ public class BluetoothHandsfree {
 
             boolean callsSwitched;
 
-            if (mCM.getDefaultPhone().getPhoneType() == Phone.PHONE_TYPE_CDMA &&
+            if (mCM.getDefaultPhone().getPhoneType() == PhoneConstants.PHONE_TYPE_CDMA &&
                 mCdmaThreeWayCallState == CdmaPhoneCallState.PhoneCallState.CONF_CALL) {
                 callsSwitched = mCdmaCallsSwapped;
             } else {
@@ -2336,9 +2337,9 @@ public class BluetoothHandsfree {
                     result.addResponse(args);
                     return result;
                 }
-                if (phoneType == Phone.PHONE_TYPE_CDMA) {
+                if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
                     return cdmaGetClccResult();
-                } else if (phoneType == Phone.PHONE_TYPE_GSM) {
+                } else if (phoneType == PhoneConstants.PHONE_TYPE_GSM) {
                     return gsmGetClccResult();
                 } else {
                     throw new IllegalStateException("Unexpected phone type: " + phoneType);
@@ -2368,7 +2369,7 @@ public class BluetoothHandsfree {
                             return new AtCommandResult(AtCommandResult.ERROR);
                         }
                     } else if (args[0].equals(1)) {
-                        if (phoneType == Phone.PHONE_TYPE_CDMA) {
+                        if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
                             if (ringingCall.isRinging()) {
                                 // Hangup the active call and then answer call waiting call.
                                 if (VDBG) log("CHLD:1 Callwaiting Answer call");
@@ -2381,7 +2382,7 @@ public class BluetoothHandsfree {
                                 PhoneUtils.hangup(PhoneApp.getInstance().mCM);
                             }
                             return new AtCommandResult(AtCommandResult.OK);
-                        } else if (phoneType == Phone.PHONE_TYPE_GSM) {
+                        } else if (phoneType == PhoneConstants.PHONE_TYPE_GSM) {
                             // Hangup active call, answer held call
                             if (PhoneUtils.answerAndEndActive(
                                     PhoneApp.getInstance().mCM, ringingCall)) {
@@ -2394,7 +2395,7 @@ public class BluetoothHandsfree {
                         }
                     } else if (args[0].equals(2)) {
                         sendURC("OK");
-                        if (phoneType == Phone.PHONE_TYPE_CDMA) {
+                        if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
                             // For CDMA, the way we switch to a new incoming call is by
                             // calling PhoneUtils.answerCall(). switchAndHoldActive() won't
                             // properly update the call state within telephony.
@@ -2414,7 +2415,7 @@ public class BluetoothHandsfree {
                                 // Toggle the second callers active state flag
                                 cdmaSwapSecondCallState();
                             }
-                        } else if (phoneType == Phone.PHONE_TYPE_GSM) {
+                        } else if (phoneType == PhoneConstants.PHONE_TYPE_GSM) {
                             PhoneUtils.switchHoldingAndActive(backgroundCall);
                         } else {
                             throw new IllegalStateException("Unexpected phone type: " + phoneType);
@@ -2422,7 +2423,7 @@ public class BluetoothHandsfree {
                         return new AtCommandResult(AtCommandResult.UNSOLICITED);
                     } else if (args[0].equals(3)) {
                         sendURC("OK");
-                        if (phoneType == Phone.PHONE_TYPE_CDMA) {
+                        if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
                             CdmaPhoneCallState.PhoneCallState state =
                                 PhoneApp.getInstance().cdmaPhoneCallState.getCurrentCallState();
                             // For CDMA, we need to check if the call is in THRWAY_ACTIVE state
@@ -2434,7 +2435,7 @@ public class BluetoothHandsfree {
                                 // This can happen when CONF_CALL was entered from a Call Waiting
                                 mBluetoothPhoneState.updateCallHeld();
                             }
-                        } else if (phoneType == Phone.PHONE_TYPE_GSM) {
+                        } else if (phoneType == PhoneConstants.PHONE_TYPE_GSM) {
                             if (mCM.hasActiveFgCall() && mCM.hasActiveBgCall()) {
                                 PhoneUtils.mergeCalls();
                             }
