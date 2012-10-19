@@ -41,7 +41,6 @@ import com.android.internal.telephony.IccCard;
 import com.android.internal.telephony.ITelephony;
 import com.android.internal.telephony.Phone;
 import com.android.internal.telephony.CallManager;
-import com.android.internal.telephony.PhoneConstants;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -150,11 +149,11 @@ public class PhoneInterfaceManager extends ITelephony.Stub {
                     request = (MainThreadRequest) msg.obj;
                     boolean hungUp = false;
                     int phoneType = mPhone.getPhoneType();
-                    if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
+                    if (phoneType == Phone.PHONE_TYPE_CDMA) {
                         // CDMA: If the user presses the Power button we treat it as
                         // ending the complete call session
                         hungUp = PhoneUtils.hangupRingingAndActive(mPhone);
-                    } else if (phoneType == PhoneConstants.PHONE_TYPE_GSM) {
+                    } else if (phoneType == Phone.PHONE_TYPE_GSM) {
                         // GSM: End the call as per the Phone state
                         hungUp = PhoneUtils.hangup(mCM);
                     } else {
@@ -258,8 +257,8 @@ public class PhoneInterfaceManager extends ITelephony.Stub {
         }
 
         // PENDING: should we just silently fail if phone is offhook or ringing?
-        PhoneConstants.State state = mCM.getState();
-        if (state != PhoneConstants.State.OFFHOOK && state != PhoneConstants.State.RINGING) {
+        Phone.State state = mCM.getState();
+        if (state != Phone.State.OFFHOOK && state != Phone.State.RINGING) {
             Intent  intent = new Intent(Intent.ACTION_DIAL, Uri.parse(url));
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             mApp.startActivity(intent);
@@ -427,7 +426,7 @@ public class PhoneInterfaceManager extends ITelephony.Stub {
      * @see silenceRinger
      */
     private void silenceRingerInternal() {
-        if ((mCM.getState() == PhoneConstants.State.RINGING)
+        if ((mCM.getState() == Phone.State.RINGING)
             && mApp.notifier.isRinging()) {
             // Ringer is actually playing, so silence it.
             if (DBG) log("silenceRingerInternal: silencing...");
@@ -436,15 +435,15 @@ public class PhoneInterfaceManager extends ITelephony.Stub {
     }
 
     public boolean isOffhook() {
-        return (mCM.getState() == PhoneConstants.State.OFFHOOK);
+        return (mCM.getState() == Phone.State.OFFHOOK);
     }
 
     public boolean isRinging() {
-        return (mCM.getState() == PhoneConstants.State.RINGING);
+        return (mCM.getState() == Phone.State.RINGING);
     }
 
     public boolean isIdle() {
-        return (mCM.getState() == PhoneConstants.State.IDLE);
+        return (mCM.getState() == Phone.State.IDLE);
     }
 
     public boolean isSimPinEnabled() {

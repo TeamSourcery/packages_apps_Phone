@@ -17,7 +17,6 @@
 package com.android.phone;
 
 import android.animation.LayoutTransition;
-import android.content.res.Configuration;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
@@ -34,13 +33,10 @@ import android.text.TextUtils;
 import android.text.format.DateUtils;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewStub;
 import android.view.accessibility.AccessibilityEvent;
-import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -51,7 +47,6 @@ import com.android.internal.telephony.CallerInfo;
 import com.android.internal.telephony.CallerInfoAsyncQuery;
 import com.android.internal.telephony.Connection;
 import com.android.internal.telephony.Phone;
-import com.android.internal.telephony.PhoneConstants;
 
 import java.util.List;
 
@@ -254,7 +249,7 @@ public class CallCard extends LinearLayout
 
         // Update the onscreen UI based on the current state of the phone.
 
-        PhoneConstants.State state = cm.getState();  // IDLE, RINGING, or OFFHOOK
+        Phone.State state = cm.getState();  // IDLE, RINGING, or OFFHOOK
         Call ringingCall = cm.getFirstActiveRingingCall();
         Call fgCall = cm.getActiveFgCall();
         Call bgCall = cm.getFirstActiveBgCall();
@@ -317,8 +312,8 @@ public class CallCard extends LinearLayout
      * Updates the overall size and positioning of mCallInfoContainer and
      * the "Call info" blocks, based on the phone state.
      */
-    private void updateCallInfoLayout(PhoneConstants.State state) {
-        boolean ringing = (state == PhoneConstants.State.RINGING);
+    private void updateCallInfoLayout(Phone.State state) {
+        boolean ringing = (state == Phone.State.RINGING);
         if (DBG) log("updateCallInfoLayout()...  ringing = " + ringing);
 
         // Based on the current state, update the overall
@@ -331,10 +326,7 @@ public class CallCard extends LinearLayout
         int reservedVerticalSpace = mInCallScreen.getInCallTouchUi().getTouchUiHeight();
         ViewGroup.MarginLayoutParams callInfoLp =
                 (ViewGroup.MarginLayoutParams) mCallInfoContainer.getLayoutParams();
-         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE)
-            callInfoLp.rightMargin = reservedVerticalSpace; // set margin on right side if in landscape rather than bottom
-        else 
-            callInfoLp.bottomMargin = reservedVerticalSpace;  // Equivalent to setting
+        callInfoLp.bottomMargin = reservedVerticalSpace;  // Equivalent to setting
                                                           // android:layout_marginBottom in XML
         if (DBG) log("  ==> callInfoLp.bottomMargin: " + reservedVerticalSpace);
         mCallInfoContainer.setLayoutParams(callInfoLp);
@@ -369,7 +361,7 @@ public class CallCard extends LinearLayout
         Phone phone = fgCall.getPhone();
 
         int phoneType = phone.getPhoneType();
-        if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
+        if (phoneType == Phone.PHONE_TYPE_CDMA) {
             if ((mApplication.cdmaPhoneCallState.getCurrentCallState()
                     == CdmaPhoneCallState.PhoneCallState.THRWAY_ACTIVE)
                     && mApplication.cdmaPhoneCallState.IsThreeWayCallOrigStateDialing()) {
@@ -379,8 +371,8 @@ public class CallCard extends LinearLayout
                 // we need to clean up the background call area.
                 displaySecondaryCallStatus(cm, bgCall);
             }
-        } else if ((phoneType == PhoneConstants.PHONE_TYPE_GSM)
-                || (phoneType == PhoneConstants.PHONE_TYPE_SIP)) {
+        } else if ((phoneType == Phone.PHONE_TYPE_GSM)
+                || (phoneType == Phone.PHONE_TYPE_SIP)) {
             displaySecondaryCallStatus(cm, bgCall);
         }
     }
@@ -531,10 +523,10 @@ public class CallCard extends LinearLayout
             // has only one connection.)
             Connection conn = null;
             int phoneType = call.getPhone().getPhoneType();
-            if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
+            if (phoneType == Phone.PHONE_TYPE_CDMA) {
                 conn = call.getLatestConnection();
-            } else if ((phoneType == PhoneConstants.PHONE_TYPE_GSM)
-                  || (phoneType == PhoneConstants.PHONE_TYPE_SIP)) {
+            } else if ((phoneType == Phone.PHONE_TYPE_GSM)
+                  || (phoneType == Phone.PHONE_TYPE_SIP)) {
                 conn = call.getEarliestConnection();
             } else {
                 throw new IllegalStateException("Unexpected phone type: " + phoneType);
@@ -547,8 +539,7 @@ public class CallCard extends LinearLayout
                 // with the current implementation of getCallerInfo and
                 // updateDisplayForPerson.
                 CallerInfo info = PhoneUtils.getCallerInfo(getContext(), null /* conn */);
-                updateDisplayForPerson(info, PhoneConstants.PRESENTATION_ALLOWED, false, call,
-                        conn);
+                updateDisplayForPerson(info, Connection.PRESENTATION_ALLOWED, false, call, conn);
             } else {
                 if (DBG) log("  - CONN: " + conn + ", state = " + conn.getState());
                 int presentation = conn.getNumberPresentation();
@@ -566,7 +557,7 @@ public class CallCard extends LinearLayout
 
                 // Adding a check to see if the update was caused due to a Phone number update
                 // or CNAP update. If so then we need to start a new query
-                if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
+                if (phoneType == Phone.PHONE_TYPE_CDMA) {
                     Object obj = conn.getUserData();
                     String updatedNumber = conn.getAddress();
                     String updatedCnapName = conn.getCnapName();
@@ -669,10 +660,10 @@ public class CallCard extends LinearLayout
             Call call = (Call) cookie;
             Connection conn = null;
             int phoneType = call.getPhone().getPhoneType();
-            if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
+            if (phoneType == Phone.PHONE_TYPE_CDMA) {
                 conn = call.getLatestConnection();
-            } else if ((phoneType == PhoneConstants.PHONE_TYPE_GSM)
-                  || (phoneType == PhoneConstants.PHONE_TYPE_SIP)) {
+            } else if ((phoneType == Phone.PHONE_TYPE_GSM)
+                  || (phoneType == Phone.PHONE_TYPE_SIP)) {
                 conn = call.getEarliestConnection();
             } else {
                 throw new IllegalStateException("Unexpected phone type: " + phoneType);
@@ -680,7 +671,7 @@ public class CallCard extends LinearLayout
             PhoneUtils.CallerInfoToken cit =
                    PhoneUtils.startGetCallerInfo(getContext(), conn, this, null);
 
-            int presentation = PhoneConstants.PRESENTATION_ALLOWED;
+            int presentation = Connection.PRESENTATION_ALLOWED;
             if (conn != null) presentation = conn.getNumberPresentation();
             if (DBG) log("- onQueryComplete: presentation=" + presentation
                     + ", contactExists=" + ci.contactExists);
@@ -689,7 +680,7 @@ public class CallCard extends LinearLayout
             // CallerInfo (for CNAP). Therefore if ci.contactExists then use the ci passed in.
             // Otherwise, regenerate the CIT from the Connection and use the CallerInfo from there.
             if (ci.contactExists) {
-                updateDisplayForPerson(ci, PhoneConstants.PRESENTATION_ALLOWED, false, call, conn);
+                updateDisplayForPerson(ci, Connection.PRESENTATION_ALLOWED, false, call, conn);
             } else {
                 updateDisplayForPerson(cit.currentInfo, presentation, false, call, conn);
             }
@@ -811,7 +802,7 @@ public class CallCard extends LinearLayout
 
         // Check a couple of other special cases (these are all CDMA-specific).
 
-        if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
+        if (phoneType == Phone.PHONE_TYPE_CDMA) {
             if ((state == Call.State.ACTIVE)
                 && mApplication.cdmaPhoneCallState.IsThreeWayCallOrigStateDialing()) {
                 // Display "Dialing" while dialing a 3Way call, even
@@ -1000,7 +991,7 @@ public class CallCard extends LinearLayout
                 // CDMA: This is because in CDMA when the user originates the second call,
                 // although the Foreground call state is still ACTIVE in reality the network
                 // put the first call on hold.
-                if (mApplication.phone.getPhoneType() == PhoneConstants.PHONE_TYPE_CDMA) {
+                if (mApplication.phone.getPhoneType() == Phone.PHONE_TYPE_CDMA) {
                     showSecondaryCallInfo();
 
                     List<Connection> connections = call.getConnections();
@@ -1027,7 +1018,7 @@ public class CallCard extends LinearLayout
                         String name = PhoneUtils.getCompactNameFromCallerInfo(info, getContext());
                         boolean forceGenericPhoto = false;
                         if (info != null && info.numberPresentation !=
-                                PhoneConstants.PRESENTATION_ALLOWED) {
+                                Connection.PRESENTATION_ALLOWED) {
                             name = PhoneUtils.getPresentationString(
                                     getContext(), info.numberPresentation);
                             forceGenericPhoto = true;
@@ -1242,7 +1233,7 @@ public class CallCard extends LinearLayout
                     // (or potentially some other default based on the presentation.)
                     displayName = PhoneUtils.getPresentationString(getContext(), presentation);
                     if (DBG) log("  ==> no name *or* number! displayName = " + displayName);
-                } else if (presentation != PhoneConstants.PRESENTATION_ALLOWED) {
+                } else if (presentation != Connection.PRESENTATION_ALLOWED) {
                     // This case should never happen since the network should never send a phone #
                     // AND a restricted presentation. However we leave it here in case of weird
                     // network behavior
@@ -1279,7 +1270,7 @@ public class CallCard extends LinearLayout
             } else {
                 // We do have a valid "name" in the CallerInfo.  Display that
                 // in the "name" slot, and the phone number in the "number" slot.
-                if (presentation != PhoneConstants.PRESENTATION_ALLOWED) {
+                if (presentation != Connection.PRESENTATION_ALLOWED) {
                     // This case should never happen since the network should never send a name
                     // AND a restricted presentation. However we leave it here in case of weird
                     // network behavior
@@ -1393,7 +1384,7 @@ public class CallCard extends LinearLayout
         if (DBG) log("updateDisplayForConference()...");
 
         int phoneType = call.getPhone().getPhoneType();
-        if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
+        if (phoneType == Phone.PHONE_TYPE_CDMA) {
             // This state corresponds to both 3-Way merged call and
             // Call Waiting accepted call.
             // In this case we display the UI in a "generic" state, with
@@ -1402,8 +1393,8 @@ public class CallCard extends LinearLayout
             // which caller party he is talking to.
             showImage(mPhoto, R.drawable.picture_dialing);
             mName.setText(R.string.card_title_in_call);
-        } else if ((phoneType == PhoneConstants.PHONE_TYPE_GSM)
-                || (phoneType == PhoneConstants.PHONE_TYPE_SIP)) {
+        } else if ((phoneType == Phone.PHONE_TYPE_GSM)
+                || (phoneType == Phone.PHONE_TYPE_SIP)) {
             // Normal GSM (or possibly SIP?) conference call.
             // Display the "conference call" image as the contact photo.
             // TODO: Better visual treatment for contact photos in a
@@ -1499,10 +1490,10 @@ public class CallCard extends LinearLayout
                 {
                     Connection conn = null;
                     int phoneType = call.getPhone().getPhoneType();
-                    if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
+                    if (phoneType == Phone.PHONE_TYPE_CDMA) {
                         conn = call.getLatestConnection();
-                    } else if ((phoneType == PhoneConstants.PHONE_TYPE_GSM)
-                            || (phoneType == PhoneConstants.PHONE_TYPE_SIP)) {
+                    } else if ((phoneType == Phone.PHONE_TYPE_GSM)
+                            || (phoneType == Phone.PHONE_TYPE_SIP)) {
                         conn = call.getEarliestConnection();
                     } else {
                         throw new IllegalStateException("Unexpected phone type: " + phoneType);
@@ -1638,9 +1629,8 @@ public class CallCard extends LinearLayout
      * and/or icon to be displayed here.)
      */
     private void updateCallTypeLabel(Call call) {
-        int phoneType = (call != null) ? call.getPhone().getPhoneType() :
-                PhoneConstants.PHONE_TYPE_NONE;
-        if (phoneType == PhoneConstants.PHONE_TYPE_SIP) {
+        int phoneType = (call != null) ? call.getPhone().getPhoneType() : Phone.PHONE_TYPE_NONE;
+        if (phoneType == Phone.PHONE_TYPE_SIP) {
             mCallTypeLabel.setVisibility(View.VISIBLE);
             mCallTypeLabel.setText(R.string.incall_call_type_label_sip);
             mCallTypeLabel.setTextColor(mTextColorCallTypeSip);

@@ -36,7 +36,6 @@ import android.view.View;
 import android.widget.ProgressBar;
 
 import com.android.internal.telephony.Phone;
-import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.TelephonyCapabilities;
 
 /**
@@ -158,7 +157,7 @@ public class OutgoingCallBroadcaster extends Activity
                 if (DBG) Log.v(TAG, "CALL cancelled (null number), returning...");
                 return;
             } else if (TelephonyCapabilities.supportsOtasp(app.phone)
-                    && (app.phone.getState() != PhoneConstants.State.IDLE)
+                    && (app.phone.getState() != Phone.State.IDLE)
                     && (app.phone.isOtaSpNumber(number))) {
                 if (DBG) Log.v(TAG, "Call is active, a 2nd OTA call cancelled -- returning.");
                 return;

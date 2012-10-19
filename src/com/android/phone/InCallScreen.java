@@ -32,7 +32,6 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Typeface;
@@ -67,7 +66,6 @@ import com.android.internal.telephony.CallManager;
 import com.android.internal.telephony.Connection;
 import com.android.internal.telephony.MmiCode;
 import com.android.internal.telephony.Phone;
-import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.TelephonyCapabilities;
 import com.android.phone.Constants.CallStatusCode;
 import com.android.phone.InCallUiState.InCallScreenMode;
@@ -123,7 +121,6 @@ public class InCallScreen extends Activity
             "com.android.phone.extra.GATEWAY_URI";
 
     private static final String BUTTON_EXIT_TO_HOMESCREEN_KEY = "button_exit_to_home_screen_key";
-    private static final String BUTTON_LANDSCAPE_KEY = "button_landscape_key";
 
     // Amount of time (in msec) that we display the "Call ended" state.
     // The "short" value is for calls ended by the local user, and the
@@ -252,7 +249,6 @@ public class InCallScreen extends Activity
     private PowerManager mPowerManager;
 
     public boolean Exit_To_Home_Screen = false;
-    private boolean Enable_Landscape_In_Call = false;
 
     // For use with Pause/Wait dialogs
     private String mPostDialStrAfterPause;
@@ -476,7 +472,7 @@ public class InCallScreen extends Activity
 
         // set this flag so this activity will stay in front of the keyguard
         int flags = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED;
-        if (mApp.getPhoneState() == PhoneConstants.State.OFFHOOK) {
+        if (mApp.getPhoneState() == Phone.State.OFFHOOK) {
             // While we are in call, the in-call screen should dismiss the keyguard.
             // This allows the user to press Home to go directly home without going through
             // an insecure lock screen.
@@ -563,19 +559,6 @@ public class InCallScreen extends Activity
 
         updateSettings();
 
-          if ((!Enable_Landscape_In_Call) && (getResources().getConfiguration().orientation==Configuration.ORIENTATION_LANDSCAPE)) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-            // We are in Landscape mode physically, but have not enabled it in settings.
-        }
-        if (Enable_Landscape_In_Call && (getRequestedOrientation()!=ActivityInfo.SCREEN_ORIENTATION_SENSOR)){
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
-            // We have enabled Landscape in settings, but it looks like we are still locked in Portrait
-        }
-            // This next block is a little overkill, but I need to force a redraw
-        setContentView(R.layout.incall_screen);
-        initInCallScreen();
-        updateScreen();
-
         mIsForegroundActivity = true;
         mIsForegroundActivityForProximity = true;
 
@@ -613,8 +596,10 @@ public class InCallScreen extends Activity
         } else {
             closeDialpadInternal(false);  // no "closing" animation
         }
-        //
-        // TODO: also need to load inCallUiState.dialpadDigits into the dialpad
+
+        // Reset the dialpad context
+        // TODO: Dialpad digits should be set here as well (once they are saved)
+        mDialer.setDialpadContext(inCallUiState.dialpadContextText);
 
         // If there's a "Respond via SMS" popup still around since the
         // last time we were the foreground activity, make sure it's not
@@ -738,7 +723,7 @@ public class InCallScreen extends Activity
 
         // Coming to the foreground while in an incoming call is ringing.
         // We need to do something special.
-        if (mCM.getState() == PhoneConstants.State.RINGING) {
+        if (mCM.getState() == Phone.State.RINGING) {
             // If the phone is ringing, we *should* already be holding a
             // full wake lock (which we would have acquired before
             // firing off the intent that brought us here; see
@@ -893,7 +878,7 @@ public class InCallScreen extends Activity
         // the same time that the phone state is changing.  This can
         // end up causing the sleep request to be ignored.
         if (mHandler.hasMessages(DELAYED_CLEANUP_AFTER_DISCONNECT)
-                && mCM.getState() != PhoneConstants.State.RINGING) {
+                && mCM.getState() != Phone.State.RINGING) {
             if (DBG) log("DELAYED_CLEANUP_AFTER_DISCONNECT detected, moving UI to background.");
             endInCallScreenSession();
         }
@@ -939,7 +924,7 @@ public class InCallScreen extends Activity
         updateKeyguardPolicy(false);
 
         // See also PhoneApp#updatePhoneState(), which takes care of all the other release() calls.
-        if (mApp.getUpdateLock().isHeld() && mApp.getPhoneState() == PhoneConstants.State.IDLE) {
+        if (mApp.getUpdateLock().isHeld() && mApp.getPhoneState() == Phone.State.IDLE) {
             if (DBG) {
                 log("Release UpdateLock on onPause() because there's no active phone call.");
             }
@@ -954,10 +939,10 @@ public class InCallScreen extends Activity
 
         stopTimer();
 
-        PhoneConstants.State state = mCM.getState();
+        Phone.State state = mCM.getState();
         if (DBG) log("onStop: state = " + state);
 
-        if (state == PhoneConstants.State.IDLE) {
+        if (state == Phone.State.IDLE) {
             if (mRespondViaSmsManager.isShowingPopup()) {
                 // This means that the user has been opening the "Respond via SMS" dialog even
                 // after the incoming call hanging up, and the screen finally went background.
@@ -1336,7 +1321,7 @@ public class InCallScreen extends Activity
      * value of false means there's currently no phone activity at all.
      */
     private boolean phoneIsInUse() {
-        return mCM.getState() != PhoneConstants.State.IDLE;
+        return mCM.getState() != Phone.State.IDLE;
     }
 
     private boolean handleDialerKeyDown(int keyCode, KeyEvent event) {
@@ -1413,7 +1398,7 @@ public class InCallScreen extends Activity
         final boolean hasHoldingCall = mCM.hasActiveBgCall();
 
         int phoneType = mPhone.getPhoneType();
-        if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
+        if (phoneType == Phone.PHONE_TYPE_CDMA) {
             // The green CALL button means either "Answer", "Swap calls/On Hold", or
             // "Add to 3WC", depending on the current state of the Phone.
 
@@ -1436,8 +1421,8 @@ public class InCallScreen extends Activity
                 if (DBG) log("answerCall: Switch btwn 2 calls scenario");
                 internalSwapCalls();
             }
-        } else if ((phoneType == PhoneConstants.PHONE_TYPE_GSM)
-                || (phoneType == PhoneConstants.PHONE_TYPE_SIP)) {
+        } else if ((phoneType == Phone.PHONE_TYPE_GSM)
+                || (phoneType == Phone.PHONE_TYPE_SIP)) {
             if (hasRingingCall) {
                 // If an incoming call is ringing, the CALL button is actually
                 // handled by the PhoneWindowManager.  (We do this to make
@@ -1551,7 +1536,7 @@ public class InCallScreen extends Activity
             case KeyEvent.KEYCODE_VOLUME_UP:
             case KeyEvent.KEYCODE_VOLUME_DOWN:
             case KeyEvent.KEYCODE_VOLUME_MUTE:
-                if (mCM.getState() == PhoneConstants.State.RINGING) {
+                if (mCM.getState() == Phone.State.RINGING) {
                     // If an incoming call is ringing, the VOLUME buttons are
                     // actually handled by the PhoneWindowManager.  (We do
                     // this to make sure that we'll respond to them even if
@@ -1691,7 +1676,7 @@ public class InCallScreen extends Activity
      * Something has changed in the phone's state.  Update the UI.
      */
     private void onPhoneStateChanged(AsyncResult r) {
-        PhoneConstants.State state = mCM.getState();
+        Phone.State state = mCM.getState();
         if (DBG) log("onPhoneStateChanged: current state = " + state);
 
         // There's nothing to do here if we're not the foreground activity.
@@ -1741,7 +1726,7 @@ public class InCallScreen extends Activity
 
         boolean currentlyIdle = !phoneIsInUse();
         int autoretrySetting = AUTO_RETRY_OFF;
-        boolean phoneIsCdma = (mPhone.getPhoneType() == PhoneConstants.PHONE_TYPE_CDMA);
+        boolean phoneIsCdma = (mPhone.getPhoneType() == Phone.PHONE_TYPE_CDMA);
         if (phoneIsCdma) {
             // Get the Auto-retry setting only if Phone State is IDLE,
             // else let it stay as AUTO_RETRY_OFF
@@ -1965,7 +1950,7 @@ public class InCallScreen extends Activity
             // higher preference. At this time framework sends a disconnect for the Out going
             // call connection hence we should *not* bring down the InCallScreen as the Phone
             // State would be RINGING
-            if (mPhone.getPhoneType() == PhoneConstants.PHONE_TYPE_CDMA) {
+            if (mPhone.getPhoneType() == Phone.PHONE_TYPE_CDMA) {
                 if (!currentlyIdle) {
                     // Clean up any connections in the DISCONNECTED state.
                     // This is necessary cause in CallCollision the foreground call might have
@@ -2117,9 +2102,9 @@ public class InCallScreen extends Activity
 
         // if phone is a CDMA phone display feature code completed message
         int phoneType = mPhone.getPhoneType();
-        if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
+        if (phoneType == Phone.PHONE_TYPE_CDMA) {
             PhoneUtils.displayMMIComplete(mPhone, mApp, mmiCode, null, null);
-        } else if (phoneType == PhoneConstants.PHONE_TYPE_GSM) {
+        } else if (phoneType == Phone.PHONE_TYPE_GSM) {
             if (mmiCode.getState() != MmiCode.State.PENDING) {
                 if (DBG) log("Got MMI_COMPLETE, finishing InCallScreen...");
                 dismissAllDialogs();
@@ -2269,8 +2254,7 @@ public class InCallScreen extends Activity
 
     private View createWildPromptView() {
         LinearLayout result = new LinearLayout(this);
-        //result.setOrientation(LinearLayout.VERTICAL);
-        // Let the Manfiest determine Layout.
+        result.setOrientation(LinearLayout.VERTICAL);
         result.setPadding(5, 5, 5, 5);
 
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
@@ -2363,7 +2347,7 @@ public class InCallScreen extends Activity
         if (DBG) log("updateScreen()...");
         final InCallScreenMode inCallScreenMode = mApp.inCallUiState.inCallScreenMode;
         if (VDBG) {
-            PhoneConstants.State state = mCM.getState();
+            Phone.State state = mCM.getState();
             log("  - phone state = " + state);
             log("  - inCallScreenMode = " + inCallScreenMode);
         }
@@ -2430,18 +2414,28 @@ public class InCallScreen extends Activity
         // If an incoming call is ringing, make sure the dialpad is
         // closed.  (We do this to make sure we're not covering up the
         // "incoming call" UI.)
-        if (mCM.getState() == PhoneConstants.State.RINGING && mDialer.isOpened()) {
-            Log.i(LOG_TAG, "During RINGING state we force hiding dialpad.");
-            closeDialpadInternal(false);  // don't do the "closing" animation
+         if (mCM.getState() == Phone.State.RINGING) {
+             if (mDialer.isOpened()) {
+               Log.i(LOG_TAG, "During RINGING state we force hiding dialpad.");
+               closeDialpadInternal(false);  // don't do the "closing" animation
+             }
 
-            // Also, clear out the "history" of DTMF digits you may have typed
-            // into the previous call (so you don't see the previous call's
             // digits if you answer this call and then bring up the dialpad.)
+            // At this point, we are guranteed that the dialer is closed.
+            // This means that it is safe to clear out the "history" of DTMF digits
+            // you may have typed into the previous call (so you don't see the
+            // previous call's digits if you answer this call and then bring up the
+            // dialpad.)
             //
             // TODO: it would be more precise to do this when you *answer* the
             // incoming call, rather than as soon as it starts ringing, but
             // the InCallScreen doesn't keep enough state right now to notice
             // that specific transition in onPhoneStateChanged().
+            // TODO: This clears out the dialpad context as well so when a second
+            // call comes in while a voicemail call is happening, the voicemail
+            // dialpad will no longer have the "Voice Mail" context. It's a small
+            // case so not terribly bad, but we need to maintain a better
+            // call-to-callstate mapping before we can fix this.
             mDialer.clearDigits();
         }
         // Now that we're sure DTMF dialpad is in an appropriate state, reflect
@@ -2460,7 +2454,7 @@ public class InCallScreen extends Activity
             String postDialStr = null;
             List<Connection> fgConnections = mCM.getFgCallConnections();
             int phoneType = mCM.getFgPhone().getPhoneType();
-            if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
+            if (phoneType == Phone.PHONE_TYPE_CDMA) {
                 Connection fgLatestConnection = mCM.getFgCallLatestConnection();
                 if (mApp.cdmaPhoneCallState.getCurrentCallState() ==
                         CdmaPhoneCallState.PhoneCallState.CONF_CALL) {
@@ -2476,8 +2470,8 @@ public class InCallScreen extends Activity
                     postDialStr = fgLatestConnection.getRemainingPostDialString();
                     showWaitPromptDialog(fgLatestConnection, postDialStr);
                 }
-            } else if ((phoneType == PhoneConstants.PHONE_TYPE_GSM)
-                    || (phoneType == PhoneConstants.PHONE_TYPE_SIP)) {
+            } else if ((phoneType == Phone.PHONE_TYPE_GSM)
+                    || (phoneType == Phone.PHONE_TYPE_SIP)) {
                 for (Connection cn : fgConnections) {
                     if ((cn != null) && (cn.getPostDialState() == Connection.PostDialState.WAIT)) {
                         postDialStr = cn.getRemainingPostDialString();
@@ -2529,7 +2523,7 @@ public class InCallScreen extends Activity
         //   does in fact implement getPendingMmiCodes(), so should we
         //   check that here regardless of the phone type?
         boolean hasPendingMmiCodes =
-                (mPhone.getPhoneType() == PhoneConstants.PHONE_TYPE_GSM)
+                (mPhone.getPhoneType() == Phone.PHONE_TYPE_GSM)
                 && !mPhone.getPendingMmiCodes().isEmpty();
 
         // Finally, it's also OK to stay here on the InCallScreen if we
@@ -3130,7 +3124,7 @@ public class InCallScreen extends Activity
                 // Notifications, so we should notify the user here.
                 // Otherwise, the code in PhoneUtils.java should handle
                 // user notifications in the form of Toasts or Dialogs.
-                if (mCM.getState() == PhoneConstants.State.OFFHOOK) {
+                if (mCM.getState() == Phone.State.OFFHOOK) {
                     Toast.makeText(mApp, R.string.incall_status_dialed_mmi, Toast.LENGTH_SHORT)
                             .show();
                 }
@@ -3519,10 +3513,10 @@ public class InCallScreen extends Activity
             Phone phone = mCM.getRingingPhone();
             Call ringing = mCM.getFirstActiveRingingCall();
             int phoneType = phone.getPhoneType();
-            if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
+            if (phoneType == Phone.PHONE_TYPE_CDMA) {
                 if (DBG) log("internalAnswerCall: answering (CDMA)...");
                 if (mCM.hasActiveFgCall()
-                        && mCM.getFgPhone().getPhoneType() == PhoneConstants.PHONE_TYPE_SIP) {
+                        && mCM.getFgPhone().getPhoneType() == Phone.PHONE_TYPE_SIP) {
                     // The incoming call is CDMA call and the ongoing
                     // call is a SIP call. The CDMA network does not
                     // support holding an active call, so there's no
@@ -3536,10 +3530,10 @@ public class InCallScreen extends Activity
                 } else {
                     PhoneUtils.answerCall(ringing);
                 }
-            } else if (phoneType == PhoneConstants.PHONE_TYPE_SIP) {
+            } else if (phoneType == Phone.PHONE_TYPE_SIP) {
                 if (DBG) log("internalAnswerCall: answering (SIP)...");
                 if (mCM.hasActiveFgCall()
-                        && mCM.getFgPhone().getPhoneType() == PhoneConstants.PHONE_TYPE_CDMA) {
+                        && mCM.getFgPhone().getPhoneType() == Phone.PHONE_TYPE_CDMA) {
                     // Similar to the PHONE_TYPE_CDMA handling.
                     // The incoming call is SIP call and the ongoing
                     // call is a CDMA call. The CDMA network does not
@@ -3554,7 +3548,7 @@ public class InCallScreen extends Activity
                 } else {
                     PhoneUtils.answerCall(ringing);
                 }
-            } else if (phoneType == PhoneConstants.PHONE_TYPE_GSM) {
+            } else if (phoneType == Phone.PHONE_TYPE_GSM) {
                 if (DBG) log("internalAnswerCall: answering (GSM)...");
                 // GSM: this is usually just a wrapper around
                 // PhoneUtils.answerCall(), *but* we also need to do
@@ -3645,7 +3639,7 @@ public class InCallScreen extends Activity
      * Hang up the current active call.
      */
     private void internalHangup() {
-        PhoneConstants.State state = mCM.getState();
+        Phone.State state = mCM.getState();
         log("internalHangup()...  phone state = " + state);
 
         // Regardless of the phone state, issue a hangup request.
@@ -3666,7 +3660,7 @@ public class InCallScreen extends Activity
         //   another call, or something else going on like an active MMI
         //   sequence.)
 
-        if (state == PhoneConstants.State.IDLE) {
+        if (state == Phone.State.IDLE) {
             // The user asked us to hang up, but the phone was (already) idle!
             Log.w(LOG_TAG, "internalHangup(): phone is already IDLE!");
 
@@ -3719,7 +3713,7 @@ public class InCallScreen extends Activity
         // If we have a valid BluetoothHandsfree then since CDMA network or
         // Telephony FW does not send us information on which caller got swapped
         // we need to update the second call active state in BluetoothHandsfree internally
-        if (mCM.getBgPhone().getPhoneType() == PhoneConstants.PHONE_TYPE_CDMA) {
+        if (mCM.getBgPhone().getPhoneType() == Phone.PHONE_TYPE_CDMA) {
             BluetoothHandsfree bthf = mApp.getBluetoothHandsfree();
             if (bthf != null) {
                 bthf.cdmaSwapSecondCallState();
@@ -3838,7 +3832,7 @@ public class InCallScreen extends Activity
 
                 // Cleanup Ota Screen if necessary and set the panel
                 // to VISIBLE.
-                if (mCM.getState() != PhoneConstants.State.OFFHOOK) {
+                if (mCM.getState() != Phone.State.OFFHOOK) {
                     if (mApp.otaUtils != null) {
                         mApp.otaUtils.cleanOtaScreen(true);
                     }
@@ -4578,20 +4572,10 @@ public class InCallScreen extends Activity
         // change our UI at all based on newConfig.keyboardHidden or
         // newConfig.uiMode.)
 
-        // removed android:screenOrientation="portrait" from manifest.  Need to respond to
-        // orientation changes
-
         // TODO: we do eventually want to handle at least some config changes, such as:
         boolean isKeyboardOpen = (newConfig.keyboardHidden == Configuration.KEYBOARDHIDDEN_NO);
         if (DBG) log("  - isKeyboardOpen = " + isKeyboardOpen);
         boolean isLandscape = (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE);
-        if  (!Enable_Landscape_In_Call)
-            // Landscape is disabled - let's try to go back to portrait;
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        // if we are here, there must have been a change that justifies redrawing the screen...
-        setContentView(R.layout.incall_screen);
-        initInCallScreen();
-        updateScreen();
         if (DBG) log("  - isLandscape = " + isLandscape);
         if (DBG) log("  - uiMode = " + newConfig.uiMode);
         // See bug 2089513.
@@ -4649,7 +4633,7 @@ public class InCallScreen extends Activity
             if (mApp.proximitySensorModeEnabled()) {
                 // We should not enable notification's expanded view on RINGING state.
                 mApp.notificationMgr.statusBarHelper.enableExpandedView(
-                        mCM.getState() != PhoneConstants.State.RINGING);
+                        mCM.getState() != Phone.State.RINGING);
             } else {
                 // If proximity sensor is unavailable on the device, disable it to avoid false
                 // touches toward notifications.
@@ -4668,7 +4652,6 @@ public class InCallScreen extends Activity
        SharedPreferences callsettings = PreferenceManager.getDefaultSharedPreferences(this);
 
        Exit_To_Home_Screen = (callsettings.getBoolean(BUTTON_EXIT_TO_HOMESCREEN_KEY,false));
-       Enable_Landscape_In_Call = callsettings.getBoolean(BUTTON_LANDSCAPE_KEY,false);
 
       }
 

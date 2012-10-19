@@ -60,7 +60,6 @@ import android.widget.ListAdapter;
 import com.android.internal.telephony.CallForwardInfo;
 import com.android.internal.telephony.CommandsInterface;
 import com.android.internal.telephony.Phone;
-import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.cdma.TtyIntent;
 import com.android.phone.sip.SipSharedPreferences;
 
@@ -184,8 +183,8 @@ public class CallFeaturesSetting extends PreferenceActivity
     private static final String SIP_SETTINGS_CATEGORY_KEY =
             "sip_settings_category_key";
     private static final String BUTTON_EXIT_TO_HOMESCREEN_KEY = "button_exit_to_home_screen_key";
-    private static final String LOCKSCREEN_IF_CALL_ENDS_WITH_SCREENOFF = "lockscreen_if_call_ends_with_screenoff";
-    private static final String BUTTON_LANDSCAPE_KEY = "button_landscape_key";
+    private static final String LOCKSCREEN_IF_CALL_ENDS_WITH_SCREENOFF =
+             "lockscreen_if_call_ends_with_screenoff";
 
     private Intent mContactListIntent;
 
@@ -270,7 +269,6 @@ public class CallFeaturesSetting extends PreferenceActivity
     private CheckBoxPreference mCallEndedWithScreenOffLocks;
 
     private CheckBoxPreference mButtonExitToHomeScreen;
-    private CheckBoxPreference mButtonLandscape;
 
     private class VoiceMailProvider {
         public VoiceMailProvider(String name, Intent intent) {
@@ -284,7 +282,7 @@ public class CallFeaturesSetting extends PreferenceActivity
     /**
      * Forwarding settings we are going to save.
      */
-    static final int [] FORWARDING_SETTINGS_REASONS = new int[] {
+    private static final int [] FORWARDING_SETTINGS_REASONS = new int[] {
         CommandsInterface.CF_REASON_UNCONDITIONAL,
         CommandsInterface.CF_REASON_BUSY,
         CommandsInterface.CF_REASON_NO_REPLY,
@@ -896,7 +894,7 @@ public class CallFeaturesSetting extends PreferenceActivity
                 + " settings");
 
         // No fwd settings on CDMA
-        if (mPhone.getPhoneType() == PhoneConstants.PHONE_TYPE_CDMA) {
+        if (mPhone.getPhoneType() == Phone.PHONE_TYPE_CDMA) {
             if (DBG) log("ignoring forwarding setting since this is CDMA phone");
             mNewFwdSettings = FWD_SETTINGS_DONT_TOUCH;
         }
@@ -1613,14 +1611,14 @@ public class CallFeaturesSetting extends PreferenceActivity
                 prefSet.removePreference(options);
 
             int phoneType = mPhone.getPhoneType();
-            if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
+            if (phoneType == Phone.PHONE_TYPE_CDMA) {
                 Preference fdnButton = prefSet.findPreference(BUTTON_FDN_KEY);
                 if (fdnButton != null)
                     prefSet.removePreference(fdnButton);
                 if (!getResources().getBoolean(R.bool.config_voice_privacy_disable)) {
                     addPreferencesFromResource(R.xml.cdma_call_privacy);
                 }
-            } else if (phoneType == PhoneConstants.PHONE_TYPE_GSM) {
+            } else if (phoneType == Phone.PHONE_TYPE_GSM) {
                 addPreferencesFromResource(R.xml.gsm_umts_call_options);
             } else {
                 throw new IllegalStateException("Unexpected phone type: " + phoneType);

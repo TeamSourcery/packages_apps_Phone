@@ -17,7 +17,6 @@
 package com.android.phone;
 
 import com.android.internal.telephony.Phone;
-import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.TelephonyCapabilities;
 import com.android.internal.telephony.TelephonyProperties;
 import com.android.phone.OtaUtils.CdmaOtaInCallScreenUiState.State;
@@ -303,7 +302,7 @@ public class OtaUtils {
         }
         phone.unregisterForSubscriptionInfoReady(handler);
 
-        if (getLteOnCdmaMode(context) == PhoneConstants.LTE_ON_CDMA_UNKNOWN) {
+        if (getLteOnCdmaMode(context) == Phone.LTE_ON_CDMA_UNKNOWN) {
             if (sOtaCallLteRetries < OTA_CALL_LTE_RETRIES_MAX) {
                 if (DBG) log("maybeDoOtaCall: LTE state still unknown: retrying");
                 handler.sendEmptyMessageDelayed(request, OTA_CALL_LTE_RETRY_PERIOD);
@@ -323,8 +322,8 @@ public class OtaUtils {
         if (DBG) log("otaShowActivationScreen: " + otaShowActivationScreen);
 
         // Run the OTASP call in "interactive" mode only if
-        // this is a non-LTE "voice capable" device.
-        if (PhoneApp.sVoiceCapable && getLteOnCdmaMode(context) == PhoneConstants.LTE_ON_CDMA_FALSE) {
+        // this is a "voice capable" CDMA device in NV mode.
+        if (PhoneApp.sVoiceCapable) {
             if (phoneNeedsActivation
                     && (otaShowActivationScreen == OTA_SHOW_ACTIVATION_SCREEN_ON)) {
                 app.cdmaOtaProvisionData.isOtaCallIntentProcessed = false;
@@ -1621,9 +1620,9 @@ public class OtaUtils {
         // If the telephony manager is not available yet, or if it doesn't know the answer yet,
         // try falling back on the system property that may or may not be there
         if (telephonyManager == null
-                || telephonyManager.getLteOnCdmaMode() == PhoneConstants.LTE_ON_CDMA_UNKNOWN) {
+                || telephonyManager.getLteOnCdmaMode() == Phone.LTE_ON_CDMA_UNKNOWN) {
             return SystemProperties.getInt(TelephonyProperties.PROPERTY_LTE_ON_CDMA_DEVICE,
-                    PhoneConstants.LTE_ON_CDMA_UNKNOWN);
+                    Phone.LTE_ON_CDMA_UNKNOWN);
         }
         return telephonyManager.getLteOnCdmaMode();
     }

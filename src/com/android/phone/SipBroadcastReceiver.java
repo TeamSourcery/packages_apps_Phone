@@ -18,7 +18,6 @@ package com.android.phone;
 
 import com.android.internal.telephony.CallManager;
 import com.android.internal.telephony.Phone;
-import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.PhoneFactory;
 import com.android.internal.telephony.sip.SipPhone;
 import com.android.phone.sip.SipProfileDb;
@@ -80,7 +79,7 @@ public class SipBroadcastReceiver extends BroadcastReceiver {
 
     private void removeSipPhone(String sipUri) {
         for (Phone phone : CallManager.getInstance().getAllPhones()) {
-            if (phone.getPhoneType() == PhoneConstants.PHONE_TYPE_SIP) {
+            if (phone.getPhoneType() == Phone.PHONE_TYPE_SIP) {
                 if (((SipPhone) phone).getSipUri().equals(sipUri)) {
                     CallManager.getInstance().unregisterPhone((SipPhone)phone);
                     return;
@@ -96,7 +95,7 @@ public class SipBroadcastReceiver extends BroadcastReceiver {
             SipAudioCall sipAudioCall = SipManager.newInstance(phoneContext)
                     .takeAudioCall(intent, null);
             for (Phone phone : CallManager.getInstance().getAllPhones()) {
-                if (phone.getPhoneType() == PhoneConstants.PHONE_TYPE_SIP) {
+                if (phone.getPhoneType() == Phone.PHONE_TYPE_SIP) {
                    if (((SipPhone) phone).canTake(sipAudioCall)) return;
                 }
             }

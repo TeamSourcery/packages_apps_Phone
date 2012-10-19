@@ -18,7 +18,6 @@ package com.android.phone;
 
 import com.android.internal.telephony.CallManager;
 import com.android.internal.telephony.Phone;
-import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.TelephonyCapabilities;
 import com.android.phone.Constants.CallStatusCode;
 import com.android.phone.InCallUiState.InCallScreenMode;
@@ -508,6 +507,12 @@ public class CallController extends Handler {
                 // first gets connected.)
                 inCallUiState.showDialpad = voicemailUriSpecified;
 
+                 // For voicemails, we add context text to let the user know they
+                 // are dialing their voicemail.
+                 // TODO: This is only set here and becomes problematic when swapping calls
+                 inCallUiState.dialpadContextText = voicemailUriSpecified ?
+                     phone.getVoiceMailAlphaTag() : "";
+ 
                 // Also, in case a previous call was already active (i.e. if
                 // we just did "Add call"), clear out the "history" of DTMF
                 // digits you typed, to make sure it doesn't persist from the
@@ -531,7 +536,7 @@ public class CallController extends Handler {
                     exitedEcm = true;  // this will cause us to return EXITED_ECM from this method
                 }
 
-                if (phone.getPhoneType() == PhoneConstants.PHONE_TYPE_CDMA) {
+                if (phone.getPhoneType() == Phone.PHONE_TYPE_CDMA) {
                     // Start the timer for 3 Way CallerInfo
                     if (mApp.cdmaPhoneCallState.getCurrentCallState()
                             == CdmaPhoneCallState.PhoneCallState.THRWAY_ACTIVE) {
@@ -717,7 +722,7 @@ public class CallController extends Handler {
                 // TODO: Rather than launching a toast from here, it would
                 // be cleaner to just set a pending call status code here,
                 // and then let the InCallScreen display the toast...
-                if (mCM.getState() == PhoneConstants.State.OFFHOOK) {
+                if (mCM.getState() == Phone.State.OFFHOOK) {
                     Toast.makeText(mApp, R.string.incall_status_dialed_mmi, Toast.LENGTH_SHORT)
                             .show();
                 }

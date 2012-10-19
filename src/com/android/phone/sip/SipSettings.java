@@ -18,7 +18,6 @@ package com.android.phone.sip;
 
 import com.android.internal.telephony.CallManager;
 import com.android.internal.telephony.Phone;
-import com.android.internal.telephony.PhoneConstants;
 import com.android.phone.CallFeaturesSetting;
 import com.android.phone.R;
 import com.android.phone.SipUtil;
@@ -168,7 +167,7 @@ public class SipSettings extends PreferenceActivity {
     public void onResume() {
         super.onResume();
 
-        if (mCallManager.getState() != PhoneConstants.State.IDLE) {
+        if (mCallManager.getState() != Phone.State.IDLE) {
             mButtonSipReceiveCalls.setEnabled(false);
         } else {
             mButtonSipReceiveCalls.setEnabled(true);
@@ -491,8 +490,7 @@ public class SipSettings extends PreferenceActivity {
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        menu.findItem(MENU_ADD_ACCOUNT).setEnabled(
-                mCallManager.getState() == PhoneConstants.State.IDLE);
+        menu.findItem(MENU_ADD_ACCOUNT).setEnabled(mCallManager.getState() == Phone.State.IDLE);
         return super.onPrepareOptionsMenu(menu);
     }
 
