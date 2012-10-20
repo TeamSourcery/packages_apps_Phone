@@ -1488,4 +1488,6 @@
     <string name="vibrate_45">Vibrate every 45 seconds</string>
     <string name="vibrate_45_sum">Vibrates at the 45 second mark of every minute during outgoing calls</string>
     
+    <string name="landscape_mode_title">Enable Landscape</string>
+    <string name="landscape_mode_summary">Enable Landscape Mode (if sensor enabled)</string>
 </resources>

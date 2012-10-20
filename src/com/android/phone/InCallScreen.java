@@ -32,6 +32,7 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Typeface;
@@ -121,6 +122,7 @@ public class InCallScreen extends Activity
             "com.android.phone.extra.GATEWAY_URI";
 
     private static final String BUTTON_EXIT_TO_HOMESCREEN_KEY = "button_exit_to_home_screen_key";
+    private static final String BUTTON_LANDSCAPE_KEY = "button_landscape_key";
 
     // Amount of time (in msec) that we display the "Call ended" state.
     // The "short" value is for calls ended by the local user, and the
@@ -249,6 +251,7 @@ public class InCallScreen extends Activity
     private PowerManager mPowerManager;
 
     public boolean Exit_To_Home_Screen = false;
+    private boolean Enable_Landscape_In_Call = false;
 
     // For use with Pause/Wait dialogs
     private String mPostDialStrAfterPause;
@@ -559,6 +562,19 @@ public class InCallScreen extends Activity
 
         updateSettings();
 
+          if ((!Enable_Landscape_In_Call) && (getResources().getConfiguration().orientation==Configuration.ORIENTATION_LANDSCAPE)) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            // We are in Landscape mode physically, but have not enabled it in settings.
+        }
+        if (Enable_Landscape_In_Call && (getRequestedOrientation()!=ActivityInfo.SCREEN_ORIENTATION_SENSOR)){
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+            // We have enabled Landscape in settings, but it looks like we are still locked in Portrait
+        }
+            // This next block is a little overkill, but I need to force a redraw
+        setContentView(R.layout.incall_screen);
+        initInCallScreen();
+        updateScreen();
+
         mIsForegroundActivity = true;
         mIsForegroundActivityForProximity = true;
 
@@ -596,10 +612,8 @@ public class InCallScreen extends Activity
         } else {
             closeDialpadInternal(false);  // no "closing" animation
         }
-
-        // Reset the dialpad context
-        // TODO: Dialpad digits should be set here as well (once they are saved)
-        mDialer.setDialpadContext(inCallUiState.dialpadContextText);
+        //
+        // TODO: also need to load inCallUiState.dialpadDigits into the dialpad
 
         // If there's a "Respond via SMS" popup still around since the
         // last time we were the foreground activity, make sure it's not
@@ -2254,7 +2268,8 @@ public class InCallScreen extends Activity
 
     private View createWildPromptView() {
         LinearLayout result = new LinearLayout(this);
-        result.setOrientation(LinearLayout.VERTICAL);
+        //result.setOrientation(LinearLayout.VERTICAL);
+        // Let the Manfiest determine Layout.
         result.setPadding(5, 5, 5, 5);
 
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
@@ -2414,28 +2429,18 @@ public class InCallScreen extends Activity
         // If an incoming call is ringing, make sure the dialpad is
         // closed.  (We do this to make sure we're not covering up the
         // "incoming call" UI.)
-         if (mCM.getState() == Phone.State.RINGING) {
-             if (mDialer.isOpened()) {
-               Log.i(LOG_TAG, "During RINGING state we force hiding dialpad.");
-               closeDialpadInternal(false);  // don't do the "closing" animation
-             }
+        if (mCM.getState() == Phone.State.RINGING && mDialer.isOpened()) {
+            Log.i(LOG_TAG, "During RINGING state we force hiding dialpad.");
+            closeDialpadInternal(false);  // don't do the "closing" animation
 
+            // Also, clear out the "history" of DTMF digits you may have typed
+            // into the previous call (so you don't see the previous call's
             // digits if you answer this call and then bring up the dialpad.)
-            // At this point, we are guranteed that the dialer is closed.
-            // This means that it is safe to clear out the "history" of DTMF digits
-            // you may have typed into the previous call (so you don't see the
-            // previous call's digits if you answer this call and then bring up the
-            // dialpad.)
             //
             // TODO: it would be more precise to do this when you *answer* the
             // incoming call, rather than as soon as it starts ringing, but
             // the InCallScreen doesn't keep enough state right now to notice
             // that specific transition in onPhoneStateChanged().
-            // TODO: This clears out the dialpad context as well so when a second
-            // call comes in while a voicemail call is happening, the voicemail
-            // dialpad will no longer have the "Voice Mail" context. It's a small
-            // case so not terribly bad, but we need to maintain a better
-            // call-to-callstate mapping before we can fix this.
             mDialer.clearDigits();
         }
         // Now that we're sure DTMF dialpad is in an appropriate state, reflect
@@ -4572,10 +4577,20 @@ public class InCallScreen extends Activity
         // change our UI at all based on newConfig.keyboardHidden or
         // newConfig.uiMode.)
 
+        // removed android:screenOrientation="portrait" from manifest.  Need to respond to
+        // orientation changes
+
         // TODO: we do eventually want to handle at least some config changes, such as:
         boolean isKeyboardOpen = (newConfig.keyboardHidden == Configuration.KEYBOARDHIDDEN_NO);
         if (DBG) log("  - isKeyboardOpen = " + isKeyboardOpen);
         boolean isLandscape = (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE);
+        if  (!Enable_Landscape_In_Call)
+            // Landscape is disabled - let's try to go back to portrait;
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        // if we are here, there must have been a change that justifies redrawing the screen...
+        setContentView(R.layout.incall_screen);
+        initInCallScreen();
+        updateScreen();
         if (DBG) log("  - isLandscape = " + isLandscape);
         if (DBG) log("  - uiMode = " + newConfig.uiMode);
         // See bug 2089513.
@@ -4652,6 +4667,7 @@ public class InCallScreen extends Activity
        SharedPreferences callsettings = PreferenceManager.getDefaultSharedPreferences(this);
 
        Exit_To_Home_Screen = (callsettings.getBoolean(BUTTON_EXIT_TO_HOMESCREEN_KEY,false));
+       Enable_Landscape_In_Call = callsettings.getBoolean(BUTTON_LANDSCAPE_KEY,false);
 
       }
 
