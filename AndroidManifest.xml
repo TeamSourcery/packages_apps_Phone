@@ -15,6 +15,7 @@
 -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:androidprv="http://schemas.android.com/apk/prv/res/android"
         package="com.android.phone"
         coreApp="true"
         android:sharedUserId="android.uid.phone"
@@ -60,7 +61,6 @@
     <uses-permission android:name="android.permission.WRITE_SMS" />
     <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.SEND_SMS_NO_CONFIRMATION" />
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.SET_TIME_ZONE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
@@ -83,7 +83,9 @@
     <uses-permission android:name="android.permission.USE_SIP" />
     <uses-permission android:name="android.permission.REBOOT" />
     <uses-permission android:name="android.permission.UPDATE_LOCK" />
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL" />
     <uses-permission android:name="com.android.smspush.WAPPUSH_MANAGER_BIND" />
+    <uses-permission android:name="android.permission.MANAGE_USERS" />
 
     <!-- This tells the activity manager to not delay any of our activity
          start requests, even if they happen immediately after the user
@@ -93,10 +95,11 @@
     <application android:name="PhoneApp"
                  android:persistent="true"
                  android:label="@string/phoneAppLabel"
-                 android:icon="@drawable/ic_launcher_phone">
+                 android:icon="@mipmap/ic_launcher_phone">
             <provider android:name="IccProvider"
                       android:authorities="icc"
                       android:multiprocess="true"
+                      android:exported="true"
                       android:readPermission="android.permission.READ_CONTACTS"
                       android:writePermission="android.permission.WRITE_CONTACTS" />
 
@@ -142,7 +145,7 @@
         <activity android:name="OutgoingCallBroadcaster"
                 android:theme="@style/OutgoingCallBroadcasterTheme"
                 android:permission="android.permission.CALL_PHONE"
-                android:screenOrientation="portrait"
+                android:screenOrientation="nosensor"
                 android:configChanges="orientation|screenSize|keyboardHidden">
             <!-- CALL action intent filters, for the various ways
                  of initiating an outgoing call. -->
@@ -198,6 +201,7 @@
 
         <activity-alias android:name="PrivilegedOutgoingCallBroadcaster"
                 android:targetActivity="OutgoingCallBroadcaster"
+                android:screenOrientation="nosensor"
                 android:permission="android.permission.CALL_PRIVILEGED">
             <intent-filter>
                 <action android:name="android.intent.action.CALL_PRIVILEGED" />
@@ -240,8 +244,8 @@
             android:label="@string/phoneIconLabel"
             android:excludeFromRecents="true"
             android:launchMode="singleInstance"
-            android:screenOrientation="sensor"
-            android:configChanges="orientation|screenSize|keyboardHidden|uiMode"
+            android:screenOrientation="nosensor"
+            android:configChanges="keyboardHidden"
             android:exported="false">
         </activity>
 
@@ -434,15 +438,16 @@
             </intent-filter>
         </activity>
 
-        <!-- bluetooth headset service -->
-        <service android:name="BluetoothHeadsetService">
+        <!-- bluetooth phone service -->
+        <service android:name="BluetoothPhoneService">
             <intent-filter>
-                <action android:name="android.bluetooth.IBluetoothHeadset" />
+                <action android:name="android.bluetooth.IBluetoothHeadsetPhone" />
             </intent-filter>
         </service>
 
         <!-- Broadcast Receiver that will process BOOT Complete and launch OTA -->
-        <receiver android:name="OtaStartupReceiver" android:exported="false">
+        <receiver android:name="OtaStartupReceiver" android:exported="false"
+                androidprv:primaryUserOnly="true">
             <intent-filter android:priority="100">
                  <action android:name="android.intent.action.BOOT_COMPLETED"/>
             </intent-filter>
@@ -494,7 +499,7 @@
         </activity>
         <activity android:name=".SipCallOptionHandler"
                 android:theme="@style/SipCallOptionHandlerTheme"
-                android:screenOrientation="portrait"
+                android:screenOrientation="nosensor"
                 android:configChanges="orientation|screenSize|keyboardHidden">
         </activity>
 
@@ -514,7 +519,7 @@
         </receiver>
 
         <!-- BroadcastReceiver for receiving Intents from Notification mechanism. -->
-        <receiver android:name="PhoneApp$NotificationBroadcastReceiver" exported="false">
+        <receiver android:name="PhoneGlobals$NotificationBroadcastReceiver" exported="false">
             <intent-filter>
                 <action android:name="com.android.phone.ACTION_HANG_UP_ONGOING_CALL" />
                 <action android:name="com.android.phone.ACTION_CALL_BACK_FROM_NOTIFICATION" />

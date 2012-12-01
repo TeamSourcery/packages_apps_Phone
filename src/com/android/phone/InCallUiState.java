@@ -145,15 +145,14 @@ public class InCallUiState {
      */
     String dialpadDigits;
 
-     /**
-      * The contact/dialed number information shown in the DTMF digits text
-      * when the user has not yet typed any digits.
-      *
-      * Currently only used for displaying "Voice Mail" since voicemail calls
-      * start directly in the dialpad view.
-      */
+    /**
+     * The contact/dialed number information shown in the DTMF digits text
+     * when the user has not yet typed any digits.
+     *
+     * Currently only used for displaying "Voice Mail" since voicemail calls
+     * start directly in the dialpad view.
+     */
     String dialpadContextText;
-
 
     //
     // (3) Error / diagnostic indications
@@ -394,8 +393,8 @@ public class InCallUiState {
      * call. See also {@link InCallScreen} for more detail. There is *no* specific specification
      * about how this variable will be used.
      *
-     * @see PhoneApp#setLatestActiveCallOrigin(String)
-     * @see PhoneApp#createPhoneEndIntentUsingCallOrigin()
+     * @see PhoneGlobals#setLatestActiveCallOrigin(String)
+     * @see PhoneGlobals#createPhoneEndIntentUsingCallOrigin()
      *
      * TODO: we should determine some public behavior for this variable.
      */

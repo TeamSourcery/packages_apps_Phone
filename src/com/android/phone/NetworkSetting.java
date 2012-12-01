@@ -42,7 +42,6 @@ import com.android.internal.telephony.OperatorInfo;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.ArrayList;
 
 /**
  * "Networks" settings UI for the Phone app.
@@ -220,7 +219,7 @@ public class NetworkSetting extends PreferenceActivity
 
         addPreferencesFromResource(R.xml.carrier_select);
 
-        mPhone = PhoneApp.getPhone();
+        mPhone = PhoneGlobals.getPhone();
 
         mNetworkList = (PreferenceGroup) getPreferenceScreen().findPreference(LIST_NETWORKS_KEY);
         mNetworkMap = new HashMap<Preference, OperatorInfo>();
@@ -323,7 +322,7 @@ public class NetworkSetting extends PreferenceActivity
     private void displayNetworkQueryFailed(int error) {
         String status = getResources().getString(R.string.network_query_error);
 
-        final PhoneApp app = PhoneApp.getInstance();
+        final PhoneGlobals app = PhoneGlobals.getInstance();
         app.notificationMgr.postTransientNotification(
                 NotificationMgr.NETWORK_SELECTION_NOTIFICATION, status);
     }
@@ -340,7 +339,7 @@ public class NetworkSetting extends PreferenceActivity
             status = getResources().getString(R.string.connect_later);
         }
 
-        final PhoneApp app = PhoneApp.getInstance();
+        final PhoneGlobals app = PhoneGlobals.getInstance();
         app.notificationMgr.postTransientNotification(
                 NotificationMgr.NETWORK_SELECTION_NOTIFICATION, status);
     }
@@ -348,7 +347,7 @@ public class NetworkSetting extends PreferenceActivity
     private void displayNetworkSelectionSucceeded() {
         String status = getResources().getString(R.string.registration_done);
 
-        final PhoneApp app = PhoneApp.getInstance();
+        final PhoneGlobals app = PhoneGlobals.getInstance();
         app.notificationMgr.postTransientNotification(
                 NotificationMgr.NETWORK_SELECTION_NOTIFICATION, status);
 
@@ -388,10 +387,8 @@ public class NetworkSetting extends PreferenceActivity
         // update the state of the preferences.
         if (DBG) log("hideProgressPanel");
 
-        try {
+        if (mIsForeground) {
             dismissDialog(DIALOG_NETWORK_LIST_LOAD);
-        } catch (IllegalArgumentException e){
-          if (DBG) log(" DIALOG_NETWORK_LIST_LOAD dismissed already");
         }
 
         getPreferenceScreen().setEnabled(true);
@@ -408,21 +405,14 @@ public class NetworkSetting extends PreferenceActivity
                 // create a preference for each item in the list.
                 // just use the operator name instead of the mildly
                 // confusing mcc/mnc.
-                ArrayList <String> operatorNumerics = new ArrayList<String>();
                 for (OperatorInfo ni : result) {
-                    String operatorNumeric = ni.getOperatorNumeric();
- 	                   if (!operatorNumerics.contains(operatorNumeric)) {
- 	                       operatorNumerics.add(operatorNumeric);
- 	                       Preference carrier = new Preference(this, null);
- 	                       carrier.setTitle(getNetworkTitle(ni));
- 	                       carrier.setPersistent(false);
- 	                       mNetworkList.addPreference(carrier);
- 	                       mNetworkMap.put(carrier, ni);
- 	
- 	                       if (DBG) log("  adding:   " + ni);
-                    } else {
- 	                       if (DBG) log("  skipping: " + ni);
-                    }
+                    Preference carrier = new Preference(this, null);
+                    carrier.setTitle(getNetworkTitle(ni));
+                    carrier.setPersistent(false);
+                    mNetworkList.addPreference(carrier);
+                    mNetworkMap.put(carrier, ni);
+
+                    if (DBG) log("  " + ni);
                 }
 
             } else {

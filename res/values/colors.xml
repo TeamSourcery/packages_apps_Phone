@@ -21,13 +21,12 @@
     <color name="incall_call_banner_background">#A0000000</color> <!-- semitransparent black -->
     <color name="incall_secondary_info_background">#8033b5e5</color> <!-- semitransparent blueish grey -->
     <color name="incall_call_banner_text_color">#FFFFFF</color> <!-- white -->
-    <color name="incall_call_multiwave_background">#40000000</color> <!-- 25% black -->
 
     <!-- DTMF Dialer -->
     <color name="dtmf_dialer_display_text">#FFFFFF</color> <!-- white -->
 
     <!-- Color of the theme of the People app -->
-    <color name="people_app_theme_color">@android:color/holo_blue_light</color>
+    <color name="people_app_theme_color">#33B5E5</color>
 
     <!-- Put on top of each photo, implying 80% darker than usual. -->
     <color name="on_hold_dim_effect">#cc000000</color>

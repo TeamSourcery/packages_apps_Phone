@@ -39,6 +39,7 @@ import android.os.AsyncResult;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.UserHandle;
 import android.os.Vibrator;
 import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
@@ -60,6 +61,7 @@ import android.widget.ListAdapter;
 import com.android.internal.telephony.CallForwardInfo;
 import com.android.internal.telephony.CommandsInterface;
 import com.android.internal.telephony.Phone;
+import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.telephony.cdma.TtyIntent;
 import com.android.phone.sip.SipSharedPreferences;
 
@@ -94,7 +96,7 @@ public class CallFeaturesSetting extends PreferenceActivity
         EditPhoneNumberPreference.OnDialogClosedListener,
         EditPhoneNumberPreference.GetDefaultNumberListener{
     private static final String LOG_TAG = "CallFeaturesSetting";
-    private static final boolean DBG = (PhoneApp.DBG_LEVEL >= 2);
+    private static final boolean DBG = (PhoneGlobals.DBG_LEVEL >= 2);
 
     /**
      * Intent action to bring up Voicemail Provider settings.
@@ -169,7 +171,6 @@ public class CallFeaturesSetting extends PreferenceActivity
     private static final String BUTTON_RETRY_KEY       = "button_auto_retry_key";
     private static final String BUTTON_TTY_KEY         = "button_tty_mode_key";
     private static final String BUTTON_HAC_KEY         = "button_hac_key";
-    private static final String BUTTON_NOISE_SUPPRESSION_KEY = "button_noise_suppression_key";
 
     private static final String BUTTON_GSM_UMTS_OPTIONS = "button_gsm_more_expand_key";
     private static final String BUTTON_CDMA_OPTIONS = "button_cdma_more_expand_key";
@@ -182,9 +183,7 @@ public class CallFeaturesSetting extends PreferenceActivity
             "sip_call_options_wifi_only_key";
     private static final String SIP_SETTINGS_CATEGORY_KEY =
             "sip_settings_category_key";
-    private static final String BUTTON_EXIT_TO_HOMESCREEN_KEY = "button_exit_to_home_screen_key";
-    private static final String LOCKSCREEN_IF_CALL_ENDS_WITH_SCREENOFF = "lockscreen_if_call_ends_with_screenoff";
-    private static final String BUTTON_LANDSCAPE_KEY = "button_landscape_key";
+
     private Intent mContactListIntent;
 
     /** Event for Async voicemail change call */
@@ -259,16 +258,11 @@ public class CallFeaturesSetting extends PreferenceActivity
     private CheckBoxPreference mButtonHAC;
     private ListPreference mButtonDTMF;
     private ListPreference mButtonTTY;
-    private CheckBoxPreference mButtonNoiseSuppression;
     private ListPreference mButtonSipCallOptions;
     private ListPreference mVoicemailProviders;
     private PreferenceScreen mVoicemailSettings;
     private ListPreference mVoicemailNotificationVibrateWhen;
     private SipSharedPreferences mSipSharedPreferences;
-    private CheckBoxPreference mCallEndedWithScreenOffLocks;
-
-    private CheckBoxPreference mButtonExitToHomeScreen;
-    private CheckBoxPreference mButtonLandscape;
 
     private class VoiceMailProvider {
         public VoiceMailProvider(String name, Intent intent) {
@@ -282,7 +276,7 @@ public class CallFeaturesSetting extends PreferenceActivity
     /**
      * Forwarding settings we are going to save.
      */
-    static final int [] FORWARDING_SETTINGS_REASONS = new int[] {
+    private static final int [] FORWARDING_SETTINGS_REASONS = new int[] {
         CommandsInterface.CF_REASON_UNCONDITIONAL,
         CommandsInterface.CF_REASON_BUSY,
         CommandsInterface.CF_REASON_NO_REPLY,
@@ -480,15 +474,9 @@ public class CallFeaturesSetting extends PreferenceActivity
             return true;
         } else if (preference == mButtonTTY) {
             return true;
-         } else if (preference == mButtonNoiseSuppression) {
- 	    int nsp = mButtonNoiseSuppression.isChecked() ? 1 : 0;
- 	    // Update Noise suppression value in Settings database
- 	    Settings.System.putInt(mPhone.getContext().getContentResolver(),
- 	             Settings.System.NOISE_SUPPRESSION, nsp);
-            return true;
         } else if (preference == mButtonAutoRetry) {
-            android.provider.Settings.System.putInt(mPhone.getContext().getContentResolver(),
-                    android.provider.Settings.System.CALL_AUTO_RETRY,
+            android.provider.Settings.Global.putInt(mPhone.getContext().getContentResolver(),
+                    android.provider.Settings.Global.CALL_AUTO_RETRY,
                     mButtonAutoRetry.isChecked() ? 1 : 0);
             return true;
         } else if (preference == mButtonHAC) {
@@ -547,10 +535,6 @@ public class CallFeaturesSetting extends PreferenceActivity
             boolean doVibrate = (Boolean) objValue;
             Settings.System.putInt(mPhone.getContext().getContentResolver(),
                     Settings.System.VIBRATE_WHEN_RINGING, doVibrate ? 1 : 0);
-         } else if (preference == mCallEndedWithScreenOffLocks) {
-            boolean doLock = (Boolean) objValue;
-            Settings.System.putInt(mPhone.getContext().getContentResolver(),
-                     Settings.System.LOCKSCREEN_IF_CALL_ENDS_WITH_SCREENOFF, doLock ? 1 : 0);
         } else if (preference == mButtonDTMF) {
             int index = mButtonDTMF.findIndexOfValue((String) objValue);
             Settings.System.putInt(mPhone.getContext().getContentResolver(),
@@ -894,7 +878,7 @@ public class CallFeaturesSetting extends PreferenceActivity
                 + " settings");
 
         // No fwd settings on CDMA
-        if (mPhone.getPhoneType() == Phone.PHONE_TYPE_CDMA) {
+        if (mPhone.getPhoneType() == PhoneConstants.PHONE_TYPE_CDMA) {
             if (DBG) log("ignoring forwarding setting since this is CDMA phone");
             mNewFwdSettings = FWD_SETTINGS_DONT_TOUCH;
         }
@@ -1499,7 +1483,7 @@ public class CallFeaturesSetting extends PreferenceActivity
     protected void onCreate(Bundle icicle) {
         super.onCreate(icicle);
         if (DBG) log("onCreate(). Intent: " + getIntent());
-        mPhone = PhoneApp.getPhone();
+        mPhone = PhoneGlobals.getPhone();
 
         addPreferencesFromResource(R.xml.call_feature_setting);
 
@@ -1516,14 +1500,11 @@ public class CallFeaturesSetting extends PreferenceActivity
 
         mRingtonePreference = findPreference(BUTTON_RINGTONE_KEY);
         mVibrateWhenRinging = (CheckBoxPreference) findPreference(BUTTON_VIBRATE_ON_RING);
-        mCallEndedWithScreenOffLocks = (CheckBoxPreference) findPreference(LOCKSCREEN_IF_CALL_ENDS_WITH_SCREENOFF);
         mPlayDtmfTone = (CheckBoxPreference) findPreference(BUTTON_PLAY_DTMF_TONE);
         mButtonDTMF = (ListPreference) findPreference(BUTTON_DTMF_KEY);
         mButtonAutoRetry = (CheckBoxPreference) findPreference(BUTTON_RETRY_KEY);
         mButtonHAC = (CheckBoxPreference) findPreference(BUTTON_HAC_KEY);
         mButtonTTY = (ListPreference) findPreference(BUTTON_TTY_KEY);
-        mButtonNoiseSuppression = (CheckBoxPreference) findPreference(BUTTON_NOISE_SUPPRESSION_KEY);
-        mButtonExitToHomeScreen = (CheckBoxPreference) findPreference(BUTTON_EXIT_TO_HOMESCREEN_KEY);
         mVoicemailProviders = (ListPreference) findPreference(BUTTON_VOICEMAIL_PROVIDER_KEY);
         if (mVoicemailProviders != null) {
             mVoicemailProviders.setOnPreferenceChangeListener(this);
@@ -1543,12 +1524,6 @@ public class CallFeaturesSetting extends PreferenceActivity
                 prefSet.removePreference(mVibrateWhenRinging);
                 mVibrateWhenRinging = null;
             }
-        }
-
-        if (mCallEndedWithScreenOffLocks != null) {
- 	    mCallEndedWithScreenOffLocks.setChecked(Settings.System.getInt(getContentResolver(),
-                     Settings.System.LOCKSCREEN_IF_CALL_ENDS_WITH_SCREENOFF, 1) == 1);
-            mCallEndedWithScreenOffLocks.setOnPreferenceChangeListener(this);
         }
 
         if (mPlayDtmfTone != null) {
@@ -1593,15 +1568,6 @@ public class CallFeaturesSetting extends PreferenceActivity
             }
         }
 
-        if (mButtonNoiseSuppression != null) {
-            if (getResources().getBoolean(R.bool.has_in_call_noise_suppression)) {
- 	         mButtonNoiseSuppression.setOnPreferenceChangeListener(this);
- 	    } else {
- 	         prefSet.removePreference(mButtonNoiseSuppression);
- 	         mButtonNoiseSuppression = null;
-            }
-        }
-
         if (!getResources().getBoolean(R.bool.world_phone)) {
             Preference options = prefSet.findPreference(BUTTON_CDMA_OPTIONS);
             if (options != null)
@@ -1611,14 +1577,14 @@ public class CallFeaturesSetting extends PreferenceActivity
                 prefSet.removePreference(options);
 
             int phoneType = mPhone.getPhoneType();
-            if (phoneType == Phone.PHONE_TYPE_CDMA) {
+            if (phoneType == PhoneConstants.PHONE_TYPE_CDMA) {
                 Preference fdnButton = prefSet.findPreference(BUTTON_FDN_KEY);
                 if (fdnButton != null)
                     prefSet.removePreference(fdnButton);
                 if (!getResources().getBoolean(R.bool.config_voice_privacy_disable)) {
                     addPreferencesFromResource(R.xml.cdma_call_privacy);
                 }
-            } else if (phoneType == Phone.PHONE_TYPE_GSM) {
+            } else if (phoneType == PhoneConstants.PHONE_TYPE_GSM) {
                 addPreferencesFromResource(R.xml.gsm_umts_call_options);
             } else {
                 throw new IllegalStateException("Unexpected phone type: " + phoneType);
@@ -1753,11 +1719,6 @@ public class CallFeaturesSetting extends PreferenceActivity
             mVibrateWhenRinging.setChecked(getVibrateWhenRinging(this));
         }
 
-         if (mCallEndedWithScreenOffLocks != null) {
-             mCallEndedWithScreenOffLocks.setChecked(Settings.System.getInt(getContentResolver(),
- 	            Settings.System.LOCKSCREEN_IF_CALL_ENDS_WITH_SCREENOFF, 1) == 1);
-        }
-
         if (mButtonDTMF != null) {
             int dtmf = Settings.System.getInt(getContentResolver(),
                     Settings.System.DTMF_TONE_TYPE_WHEN_DIALING, DTMF_TONE_TYPE_NORMAL);
@@ -1765,8 +1726,8 @@ public class CallFeaturesSetting extends PreferenceActivity
         }
 
         if (mButtonAutoRetry != null) {
-            int autoretry = Settings.System.getInt(getContentResolver(),
-                    Settings.System.CALL_AUTO_RETRY, 0);
+            int autoretry = Settings.Global.getInt(getContentResolver(),
+                    Settings.Global.CALL_AUTO_RETRY, 0);
             mButtonAutoRetry.setChecked(autoretry != 0);
         }
 
@@ -1783,11 +1744,6 @@ public class CallFeaturesSetting extends PreferenceActivity
             updatePreferredTtyModeSummary(settingsTtyMode);
         }
 
-         if (mButtonNoiseSuppression != null) {
-            int nsp = Settings.System.getInt(getContentResolver(), Settings.System.NOISE_SUPPRESSION, 1);
-            mButtonNoiseSuppression.setChecked(nsp != 0);
-        }
- 
         lookupRingtoneName();
     }
 
@@ -1844,7 +1800,7 @@ public class CallFeaturesSetting extends PreferenceActivity
             updatePreferredTtyModeSummary(buttonTtyMode);
             Intent ttyModeChanged = new Intent(TtyIntent.TTY_PREFERRED_MODE_CHANGE_ACTION);
             ttyModeChanged.putExtra(TtyIntent.TTY_PREFFERED_MODE, buttonTtyMode);
-            sendBroadcast(ttyModeChanged);
+            sendBroadcastAsUser(ttyModeChanged, UserHandle.ALL);
         }
     }
 
