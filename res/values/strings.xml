@@ -1460,4 +1460,8 @@
     <!-- Title for the category "ringtone", which is shown above ringote settings
          [CHAR LIMIT=40] -->
     <string name="preference_category_ringtone">Ringtone</string>
+
+    <!-- Dialer UI Settings -->
+    <string name="dialer_ui_settings_title">Dialpad settings</string>
+    <string name="dialer_ui_settings_summary">Settings for the dialpad</string>
 </resources>
