@@ -1464,4 +1464,20 @@
     <!-- Dialer UI Settings -->
     <string name="dialer_ui_settings_title">Dialpad settings</string>
     <string name="dialer_ui_settings_summary">Settings for the dialpad</string>
+
+    <!-- Advanced Settings -->
+    <string name="advanced_setting">Advanced Settings</string>
+    <string name="vibrate_outgoing">Vibrate on answer</string>
+    <string name="vibrate_outgoing_sum">Vibrate when an outgoing call is answered</string>
+    <string name="vibrate_60">Vibrate every 60 seconds</string>
+    <string name="vibrate_60_sum">Vibrates at the 60 second mark of every minute during outgoing calls</string>
+    <string name="vibrate_hangup">Vibrate on hangup</string>
+    <string name="vibrate_hangup_sum">Vibrate when a call has ended</string>
+    <string name="vibrate_call_waiting">Vibrate call waiting</string>
+    <string name="vibrate_call_waiting_sum">Vibrate on call waiting</string>
+
+    <string name="exit_to_home_screen_title">Exit to Last Activity on End Call</string>
+    <string name="exit_to_home_screen_summary">Exit to Previous activity screen on End Call rather than going to Call Log</string>
+    <string name="landscape_mode_title">Enable Landscape</string>
+    <string name="landscape_mode_summary">Enable Landscape Mode (if sensor enabled)</string>
 </resources>

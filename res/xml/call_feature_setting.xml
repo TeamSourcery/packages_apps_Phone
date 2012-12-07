@@ -37,6 +37,33 @@
     </PreferenceCategory>
 
   <PreferenceCategory
+    android:key="pref_advanced_settings"
+    android:title="@string/advanced_setting">
+
+    <CheckBoxPreference
+        android:key="button_vibrate_outgoing"
+        android:title="@string/vibrate_outgoing"
+        android:persistent="true"
+        android:summary="@string/vibrate_outgoing_sum"/>
+    <CheckBoxPreference
+        android:key="button_vibrate_60"
+        android:title="@string/vibrate_60"
+        android:persistent="true"
+        android:summary="@string/vibrate_60_sum"/>
+    <CheckBoxPreference
+        android:key="button_vibrate_hangup"
+        android:title="@string/vibrate_hangup"
+        android:persistent="true"
+        android:summary="@string/vibrate_hangup_sum"/>
+    <CheckBoxPreference
+        android:key="button_vibrate_call_waiting"
+        android:title="@string/vibrate_call_waiting"
+        android:persistent="true"
+        android:summary="@string/vibrate_call_waiting_sum"/>
+  </PreferenceCategory>
+  
+
+  <PreferenceCategory
       android:key="button_misc_category_key"
       android:title="@string/other_settings"
       android:persistent="false" />
@@ -137,6 +164,18 @@
         android:title="@string/hac_mode_title"
         android:persistent="true"
         android:summary="@string/hac_mode_summary"/>
+
+    <CheckBoxPreference
+        android:key="button_exit_to_home_screen_key"
+        android:title="@string/exit_to_home_screen_title"
+        android:persistent="true"
+        android:summary="@string/exit_to_home_screen_summary"/>
+
+   <CheckBoxPreference
+        android:key="button_landscape_key"
+        android:title="@string/landscape_mode_title"
+        android:persistent="true"
+        android:summary="@string/landscape_mode_summary"/>
 
     <ListPreference
         android:key="button_dtmf_settings"
