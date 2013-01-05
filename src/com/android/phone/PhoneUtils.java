@@ -251,8 +251,8 @@ public class PhoneUtils {
         final PhoneGlobals app = PhoneGlobals.getInstance();
 
         // If the ringer is currently ringing and/or vibrating, stop it
-        // right now (before actually answering the call.)
-        app.getRinger().stopRing();
+        // right now and prevent new rings (before actually answering the call)
+        app.notifier.silenceRinger();
 
         final Phone phone = ringing.getPhone();
         final boolean phoneIsCdma = (phone.getPhoneType() == PhoneConstants.PHONE_TYPE_CDMA);
@@ -431,6 +431,10 @@ public class PhoneUtils {
         static boolean vibCallWaiting(Context context) {
             return PreferenceManager.getDefaultSharedPreferences(context)
                       .getBoolean("button_vibrate_call_waiting", false);
+        }
+        static boolean showInCallEvents(Context context) {
+            return PreferenceManager.getDefaultSharedPreferences(context)
+                      .getBoolean("button_show_ssn_key", false);
         }
     }
 
@@ -2630,6 +2634,15 @@ public class PhoneUtils {
         }
         return cm.getDefaultPhone();
     }
+
+    public static Phone getGsmPhone(CallManager cm) {
+         for (Phone phone: cm.getAllPhones()) {
+             if (phone.getPhoneType() == PhoneConstants.PHONE_TYPE_GSM) {
+                 return phone;
+             }
+         }
+         return null;
+     }
 
     public static Phone getSipPhoneFromUri(CallManager cm, String target) {
         for (Phone phone : cm.getAllPhones()) {
