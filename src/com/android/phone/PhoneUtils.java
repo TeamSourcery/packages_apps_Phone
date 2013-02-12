@@ -436,8 +436,12 @@ public class PhoneUtils {
             return PreferenceManager.getDefaultSharedPreferences(context)
                       .getBoolean("button_show_ssn_key", false);
         }
+         static int flipAction(Context context) {
+            String s = PreferenceManager.getDefaultSharedPreferences(context)
+                      .getString("flip_action", "0");
+            return Integer.parseInt(s);
+        }
     }
-
 
     static boolean hangupRingingCall(Call ringing) {
         if (DBG) log("hangup ringing call");
