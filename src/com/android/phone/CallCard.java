@@ -1343,9 +1343,11 @@ public class CallCard extends LinearLayout
                              + visiblePhoneNumber + "} with number " + displayName);
                 updateNameAndNumber = false;
             }
-         }
 
-         if (updateNameAndNumber) {
+        }
+
+        if (updateNameAndNumber) {
+
             if (call.isGeneric()) {
                 mName.setText(R.string.card_title_in_call);
             } else {

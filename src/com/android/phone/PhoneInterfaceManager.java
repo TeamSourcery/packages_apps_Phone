@@ -36,7 +36,6 @@ import android.os.UserHandle;
 import android.telephony.NeighboringCellInfo;
 import android.telephony.CellInfo;
 import android.telephony.ServiceState;
-import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
 

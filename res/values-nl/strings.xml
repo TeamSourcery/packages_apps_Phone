@@ -398,6 +398,7 @@
     <string name="card_title_in_call" msgid="6346543933068225205">"Actieve oproep"</string>
     <string name="card_title_my_phone_number" msgid="112428362494434191">"Mijn nummer is <xliff:g id="MY_PHONE_NUMBER">%s</xliff:g>"</string>
     <string name="notification_dialing" msgid="2107666444937350731">"Kiezen"</string>
+<<<<<<< HEAD
     <string name="call_notif_unconditionalCF">Permanent doorschakelen actief</string>
     <string name="call_notif_conditionalCF">Voorwaardelijk doorschakelen actief</string>
     <string name="call_notif_MOcall_forwarding">Oproep wordt doorgeschakeld</string>
@@ -413,6 +414,8 @@
     <string name="call_notif_forwardcheckreceived">Oproep werd doorgeschakeld</string>
     <string name="call_notif_callconnectingect">Oproep verbinden via centrale</string>
     <string name="call_notif_callconnectedect">Oproep verbonden via centrale</string>
+=======
+>>>>>>> remotes/aosp/jb-mr1.1-release
     <string name="notification_missedCallTitle" msgid="7554385905572364535">"Gemiste oproep"</string>
     <string name="notification_missedCallsTitle" msgid="1361677948941502522">"Gemiste oproepen"</string>
     <string name="notification_missedCallsMsg" msgid="4575787816055205600">"<xliff:g id="NUM_MISSED_CALLS">%s</xliff:g> gemiste oproepen"</string>
@@ -630,7 +633,8 @@
     <string name="description_target_decline" msgid="4789834364389731957">"Weigeren"</string>
     <string name="voicemail_notification_vibrate_when_title" msgid="8361970092063604886">"Trillen"</string>
     <string name="voicemail_notification_vibarte_when_dialog_title" msgid="5739583146522136440">"Trillen"</string>
-    <string name="voicemail_notification_ringtone_title" msgid="2512535133814478358">"Beltoon"</string>
+    <string name="voicemail_notification_ringtone_title" msgid="2609519527849101590">"Geluid"</string>
+    <string name="default_notification_description" msgid="78174796906240970">"Standaardgeluid (<xliff:g id="DEFAULT_SOUND_TITLE">%1$s</xliff:g>)"</string>
   <string-array name="voicemail_notification_vibrate_when_entries">
     <item msgid="468237575962916558">"Altijd"</item>
     <item msgid="1595097872875714252">"Alleen indien stil"</item>
@@ -639,9 +643,13 @@
     <string name="ringtone_title" msgid="6374978286202084684">"Beltoon telefoon"</string>
     <string name="vibrate_on_ring_title" msgid="9197564612065258960">"Trillen bij bellen"</string>
     <string name="dtmf_tone_enable_title" msgid="827601042915852989">"DTMF-tonen kiestoetsen"</string>
-    <string name="preference_category_ringtone" msgid="9007490591910078324">"Beltoon"</string>
+
+    
     <string name="perm_change_mobile_network">Verander netwerk (2G/3G)</string>
     <string name="perm_change_mobile_network_desc">Applicatie met deze toegang kan op elk moment wisselen tussen 2G en 3G. 3G is sneller, verbruikt meer stroom en kan duurder zijn.</string>
     <string name="show_ssn_label">Gebeurtenis notificaties</string>
     <string name="show_ssn_summary">Toon een notificatie voor verschillende netwerkgebeurtenissen bij gesprekken (bv. bij doorschakelen)</string>
+
+    <string name="preference_category_ringtone" msgid="5197960752529332721">"Beltoon en trillen"</string>
+
 </resources>

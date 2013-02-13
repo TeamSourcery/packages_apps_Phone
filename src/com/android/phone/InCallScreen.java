@@ -541,7 +541,9 @@ public class InCallScreen extends Activity
             return;
         }
 
+
             updateSettings();
+
 
         mApp = PhoneGlobals.getInstance();
         mApp.setInCallScreenInstance(this);
@@ -2518,8 +2520,10 @@ public class InCallScreen extends Activity
         // closed.  (We do this to make sure we're not covering up the
         // "incoming call" UI.)
         if (mCM.getState() == PhoneConstants.State.RINGING) {
+
             //If we're ringing, attach flip listener
             attachListeners();
+
             if (mDialer.isOpened()) {
               Log.i(LOG_TAG, "During RINGING state we force hiding dialpad.");
               closeDialpadInternal(false);  // don't do the "closing" animation

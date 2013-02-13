@@ -275,6 +275,24 @@ public class InCallTouchUi extends FrameLayout
                 log("updateState: quickResponse visible. Cancel showing incoming call controls.");
                 showIncomingCallControls = false;
             }
+
+            // b/6765896
+            // If the glowview triggers two hits of the respond-via-sms gadget in
+            // quick succession, it can cause the incoming call widget to show and hide
+            // twice in a row.  However, the second hide doesn't get triggered because
+            // we are already attemping to hide.  This causes an additional glowview to
+            // stay up above all other screens.
+            // In reality, we shouldn't even be showing incoming-call UI while we are
+            // showing the respond-via-sms popup, so we check for that here.
+            //
+            // TODO: In the future, this entire state machine
+            // should be reworked.  Respond-via-sms was stapled onto the current
+            // design (and so were other states) and should be made a first-class
+            // citizen in a new state machine.
+            if (mInCallScreen.isQuickResponseDialogShowing()) {
+                log("updateState: quickResponse visible. Cancel showing incoming call controls.");
+                showIncomingCallControls = false;
+            }
         } else {
             // Ok, show the regular in-call touch UI (with some exceptions):
             if (okToShowInCallControls()) {

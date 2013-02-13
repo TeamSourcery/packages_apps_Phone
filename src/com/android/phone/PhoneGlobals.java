@@ -71,10 +71,12 @@ import com.android.internal.telephony.cdma.TtyIntent;
 import com.android.phone.OtaUtils.CdmaOtaScreenState;
 import com.android.server.sip.SipService;
 
+
 import android.os.Vibrator;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.os.HandlerThread;
+
 
 /**
  * Global state for the telephony subsystem when running in the primary
@@ -260,6 +262,7 @@ public class PhoneGlobals extends ContextWrapper
     // Current TTY operating mode selected by user
     private int mPreferredTtyMode = Phone.TTY_MODE_OFF;
 
+
     // handling of vibration on call begin/each minute/call end
     private static final String ACTION_VIBRATE_60 = "com.android.phone.PhoneApp.ACTION_VIBRATE_60";
     private PendingIntent mVibrateIntent;
@@ -267,6 +270,7 @@ public class PhoneGlobals extends ContextWrapper
     private AlarmManager mAM;
     private HandlerThread mVibrationThread;
     private Handler mVibrationHandler;
+
 
     /**
      * Set the restore mute state flag. Used when we are setting the mute state
@@ -577,6 +581,7 @@ public class PhoneGlobals extends ContextWrapper
             intentFilter.addAction(TelephonyIntents.ACTION_SERVICE_STATE_CHANGED);
             intentFilter.addAction(TelephonyIntents.ACTION_EMERGENCY_CALLBACK_MODE_CHANGED);
             intentFilter.addAction(ACTION_VIBRATE_60);
+
             if (mTtyEnabled) {
                 intentFilter.addAction(TtyIntent.TTY_PREFERRED_MODE_CHANGE_ACTION);
             }
@@ -625,9 +630,11 @@ public class PhoneGlobals extends ContextWrapper
         // start with the default value to set the mute state.
         mShouldRestoreMuteOnInCallResume = false;
 
-         mVibrator = (Vibrator) this.getSystemService(Context.VIBRATOR_SERVICE);
+
+        mVibrator = (Vibrator) this.getSystemService(Context.VIBRATOR_SERVICE);
         mAM = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
         mVibrateIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_VIBRATE_60), 0);
+
 
         // TODO: Register for Cdma Information Records
         // phone.registerCdmaInformationRecord(mHandler, EVENT_UNSOL_CDMA_INFO_RECORD, null);
@@ -1540,6 +1547,7 @@ public class PhoneGlobals extends ContextWrapper
                 if (VDBG) Log.d(LOG_TAG, "mReceiver: ACTION_VIBRATE_60");
                 mAM.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + 60000, mVibrateIntent);
                 vibrate(70, 70, -1);
+
             }
         }
     }
@@ -1854,6 +1862,7 @@ public class PhoneGlobals extends ContextWrapper
         }
     }
 
+
      private final class TriVibRunnable implements Runnable {
         private int v1, p1, v2;
         TriVibRunnable(int a, int b, int c) {
@@ -1905,6 +1914,7 @@ public class PhoneGlobals extends ContextWrapper
             mVibrationThread = null;
         }
     }
+
 
     /** Service connection */
     private final ServiceConnection mBluetoothPhoneConnection = new ServiceConnection() {
