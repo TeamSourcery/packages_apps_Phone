@@ -244,11 +244,7 @@
             android:label="@string/phoneIconLabel"
             android:excludeFromRecents="true"
             android:launchMode="singleInstance"
-<<<<<<< HEAD
             android:screenOrientation="sensor"
-=======
-            android:screenOrientation="nosensor"
->>>>>>> remotes/aosp/jb-mr1.1-release
             android:configChanges="keyboardHidden"
             android:exported="false">
         </activity>
