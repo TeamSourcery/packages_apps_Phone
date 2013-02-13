@@ -1817,7 +1817,7 @@ public class CallFeaturesSetting extends PreferenceActivity
 
         if (mFlipAction != null) {
             updateFlipActionSummary(mFlipAction.getValue());
-
+        }
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(
                 mPhone.getContext());
         if (migrateVoicemailVibrationSettingsIfNeeded(prefs)) {

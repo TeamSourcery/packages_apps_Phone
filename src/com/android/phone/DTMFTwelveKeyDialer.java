@@ -60,9 +60,7 @@ public class DTMFTwelveKeyDialer implements View.OnTouchListener, View.OnKeyList
     private static final int DTMF_SEND_CNF = 101;
     private static final int DTMF_STOP = 102;
 
-    /** Accessibility manager instance used to check touch exploration state. */
-    private final AccessibilityManager mAccessibilityManager;
-
+    
     /** Accessibility manager instance used to check touch exploration state. */
     private final AccessibilityManager mAccessibilityManager;
 
@@ -681,7 +679,7 @@ public class DTMFTwelveKeyDialer implements View.OnTouchListener, View.OnKeyList
         return false;
     }
 
-    @Override
+     @Override
     public void onClick(View v) {
         // When accessibility is on, simulate press and release to preserve the
         // semantic meaning of performClick(). Required for Braille support.
@@ -689,8 +687,7 @@ public class DTMFTwelveKeyDialer implements View.OnTouchListener, View.OnKeyList
             final int id = v.getId();
             // Checking the press state prevents double activation.
             if (!v.isPressed() && mDisplayMap.containsKey(id)) {
-                processDtmf(mDisplayMap.get(id), true /* forceShortTone */);
-
+                processDtmf(mDisplayMap.get(id), true /* timedShortTone */);
             }
         }
     }
@@ -852,7 +849,7 @@ public class DTMFTwelveKeyDialer implements View.OnTouchListener, View.OnKeyList
      * EditText field that displays the DTMF digits sent so far.
      */
 
-    private final void processDtmf(char c, boolean forceShortTone) {
+    private final void processDtmf(char c, boolean timedShortTone) {
 
         // if it is a valid key, then update the display and send the dtmf tone.
         if (PhoneNumberUtils.is12Key(c)) {
@@ -974,7 +971,7 @@ public class DTMFTwelveKeyDialer implements View.OnTouchListener, View.OnKeyList
         if (DBG) log("startDtmfTone()...");
 
         // For Short DTMF we need to play the local tone for fixed duration
-        if (forceShortTone || mShortTone) {
+        if (mShortTone) {
             sendShortDtmfToNetwork(c);
         } else {
             // Pass as a char to be sent to network
@@ -986,7 +983,7 @@ public class DTMFTwelveKeyDialer implements View.OnTouchListener, View.OnKeyList
                 mHandler.sendMessageDelayed(mHandler.obtainMessage(DTMF_STOP), DTMF_DURATION_MS);
             }
         }
-        startLocalToneIfNeeded(c, forceShortTone);
+        startLocalToneIfNeeded(c);
     }
 
 
