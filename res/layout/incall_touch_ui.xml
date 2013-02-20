@@ -216,14 +216,14 @@
 
     <com.android.internal.widget.multiwaveview.GlowPadView
         android:id="@+id/incomingCallWidget"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:layout_gravity="center|bottom"
         android:layout_marginTop="20dip"
         android:layout_marginBottom="-46dp"
+        android:background="@android:color/transparent"
         android:visibility="gone"
-        android:layout_gravity="center_horizontal"
-        android:gravity="top"
+        android:gravity="left|top"
 
         prvandroid:targetDrawables="@array/incoming_call_widget_3way_targets"
         prvandroid:targetDescriptions="@array/incoming_call_widget_3way_target_descriptions"
