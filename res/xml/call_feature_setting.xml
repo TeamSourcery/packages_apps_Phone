@@ -48,6 +48,15 @@
     android:key="pref_advanced_settings"
     android:title="@string/advanced_setting">
 
+    <PreferenceScreen
+            android:key="button_blacklist"
+            android:title="@string/blacklist_title"
+            android:persistent="false">
+            <intent android:action="android.intent.action.MAIN"
+                android:targetPackage="com.android.phone"
+                android:targetClass="com.android.phone.BlacklistSetting" />
+        </PreferenceScreen>
+
     <CheckBoxPreference
         android:key="button_vibrate_outgoing"
         android:title="@string/vibrate_outgoing"
