@@ -24,7 +24,6 @@ import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -410,23 +409,10 @@ public class PhoneUtils {
             return PreferenceManager.getDefaultSharedPreferences(context)
                       .getBoolean("button_show_ssn_key", false);
         }
-        static int flipAction(Context context) {
+         static int flipAction(Context context) {
             String s = PreferenceManager.getDefaultSharedPreferences(context)
                       .getString("flip_action", "0");
             return Integer.parseInt(s);
-        }
-        static boolean isBlacklistEnabled(Context context) {
-            return getPrefs(context).getBoolean("button_enable_blacklist", false);
-        }
-        static boolean isBlacklistNotifyEnabled(Context context) {
-            return getPrefs(context).getBoolean("button_nofify", false);
-        }
-        static boolean isBlacklistRegexEnabled(Context context) {
-            return getPrefs(context).getBoolean("button_blacklist_regex", false);
-        }
-        private static SharedPreferences getPrefs(Context context) {
-            return PreferenceManager.getDefaultSharedPreferences(context);
-         
         }
     }
 
@@ -592,7 +578,14 @@ public class PhoneUtils {
             return false;
         }
 
-            return true;
+        // since hangupActiveCall() also accepts the ringing call
+        // check if the ringing call was already answered or not
+        // only answer it when the call still is ringing
+        if (ringing.isRinging()) {
+            return answerCall(ringing);
+        }
+
+        return true;
     }
 
     /**
@@ -1636,11 +1629,7 @@ public class PhoneUtils {
             // return it to the user.
 
             cit = new CallerInfoToken();
-            if (userDataObject instanceof String) { // only blacklist will cause this, so just ignore this.
-                cit.currentInfo = new CallerInfo();
-            } else {
-                cit.currentInfo = (CallerInfo) userDataObject;
-            }
+            cit.currentInfo = (CallerInfo) userDataObject;
             cit.asyncQuery = null;
             cit.isFinal = true;
             // since the query is already done, call the listener.

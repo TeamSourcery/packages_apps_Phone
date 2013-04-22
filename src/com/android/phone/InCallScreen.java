@@ -1132,12 +1132,7 @@ public class InCallScreen extends Activity
      */
     public void endInCallScreenSession() {
         if (DBG) log("endInCallScreenSession()... phone state = " + mCM.getState());
-        // Do not end the session if a call is on progress.
-        if (mCM.getState() == PhoneConstants.State.IDLE) {
-            endInCallScreenSession(false);
-        } else {
-            Log.i(LOG_TAG, "endInCallScreenSession(): Call in progress");
-        }
+        endInCallScreenSession(false);
     }
 
     /**
@@ -2844,31 +2839,6 @@ public class InCallScreen extends Activity
         }
     }
 
-    /**
-     *  Pop up a dialog confirming adding the current number to the blacklist
-     */
-    private void confirmAddBlacklist() {
-        Connection c = PhoneUtils.getConnection(mPhone, PhoneUtils.getCurrentCall(mPhone));
-        if (c == null) {
-            return;
-        }
-        final String number = c.getAddress();
-
-        // Show dialog
-        final String message = getString(R.string.add_to_blacklist_message, number);
-        new AlertDialog.Builder(this)
-                .setTitle(R.string.add_to_blacklist)
-                .setMessage(message)
-                .setPositiveButton(R.string.alert_dialog_yes, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        PhoneGlobals.getInstance().blackList.add(number);
-                        internalHangup();
-                    }
-                })
-                .setNegativeButton(R.string.alert_dialog_no, null)
-                .show();
-    }
-
 
     /**
      * View.OnClickListener implementation.
@@ -3179,9 +3149,6 @@ public class InCallScreen extends Activity
                 // Show the Manage Conference panel.
                 setInCallScreenMode(InCallScreenMode.MANAGE_CONFERENCE);
                 requestUpdateScreen();
-                break;
-            case R.id.addBlacklistButton:
-                confirmAddBlacklist();
                 break;
 
             default:
