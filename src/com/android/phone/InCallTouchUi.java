@@ -46,6 +46,7 @@ import android.widget.Toast;
 
 import com.android.internal.telephony.Call;
 import com.android.internal.telephony.CallManager;
+import com.android.internal.telephony.Connection;
 import com.android.internal.telephony.Phone;
 import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.widget.multiwaveview.GlowPadView;
@@ -97,6 +98,7 @@ public class InCallTouchUi extends FrameLayout
     private CompoundButton mAudioButton;
     private CompoundButton mHoldButton;
     private ImageButton mSwapButton;
+    private ImageButton mAddBlacklistButton;
     private View mHoldSwapSpacer;
 
     // "Extra button row"
@@ -190,6 +192,12 @@ public class InCallTouchUi extends FrameLayout
         mSwapButton.setOnClickListener(this);
         mSwapButton.setOnLongClickListener(this);
         mHoldSwapSpacer = mInCallControls.findViewById(R.id.holdSwapSpacer);
+
+        // Blacklist functionality
+        mAddBlacklistButton = (ImageButton) mInCallControls.findViewById(R.id.addBlacklistButton);
+        if (mAddBlacklistButton != null) {
+            mAddBlacklistButton.setOnClickListener(this);
+        }
 
         // TODO: Back when these buttons had text labels, we changed
         // the label of mSwapButton for CDMA as follows:
@@ -404,6 +412,7 @@ public class InCallTouchUi extends FrameLayout
             case R.id.swapButton:
             case R.id.cdmaMergeButton:
             case R.id.manageConferenceButton:
+            case R.id.addBlacklistButton:
                 // Clicks on the regular onscreen buttons get forwarded
                 // straight to the InCallScreen.
                 mInCallScreen.handleOnscreenButtonClick(id);
@@ -545,6 +554,13 @@ public class InCallTouchUi extends FrameLayout
         // "Audio"
         updateAudioButton(inCallControlState);
 
+        // "Add to black list"
+        if (mAddBlacklistButton != null) {
+            boolean visible = PhoneUtils.PhoneSettings.isBlacklistEnabled(getContext()) &&
+                    inCallControlState.canBlacklistCall;
+            mAddBlacklistButton.setVisibility(visible ? View.VISIBLE : View.GONE);
+        }
+
         // "Hold" / "Swap":
         // These two buttons occupy the same space onscreen, so at any
         // given point exactly one of them must be VISIBLE and the other
@@ -677,6 +693,7 @@ public class InCallTouchUi extends FrameLayout
         log(" - cdmaMerge: " + getButtonState(mCdmaMergeButton));
         log(" - swap: " + getButtonState(mSwapButton));
         log(" - manageConferenceButton: " + getButtonState(mManageConferenceButton));
+        log(" - addBlacklistButton: " + getButtonState(mAddBlacklistButton));
     }
 
     private static String getButtonState(View view) {
@@ -1173,6 +1190,10 @@ public class InCallTouchUi extends FrameLayout
         ViewPropertyAnimator animator = mIncomingCallWidget.animate();
         if (animator != null) {
             animator.cancel();
+            // If animation is cancelled before it's running,
+            // onAnimationCancel will not be called and mIncomingCallWidgetIsFadingOut
+            // will be alway true. hideIncomingCallWidget() will not be excuted in this case.
+            mIncomingCallWidgetIsFadingOut = false;
         }
         mIncomingCallWidget.setAlpha(1.0f);
 
